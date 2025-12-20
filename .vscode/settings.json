@@ -1,0 +1,27 @@
+{
+    "files.associations": {
+        "*.blade.php": "blade"
+    },
+    "emmet.includeLanguages": {
+        "blade": "html"
+    },
+    "javascript.validate.enable": false,
+    "[blade]": {
+        "editor.autoClosingBrackets": "always"
+    },
+    "blade.format.enable": true,
+    "intelephense.files.associations": [
+        "*.php",
+        "*.blade.php"
+    ],
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/node_modules": true,
+        "**/vendor": true,
+        "**/storage/framework/cache": true,
+        "**/storage/framework/sessions": true,
+        "**/storage/framework/views": true,
+        "**/storage/logs": true
+    }
+}

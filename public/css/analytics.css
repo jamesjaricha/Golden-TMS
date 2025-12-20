@@ -1,0 +1,155 @@
+/* Analytics Page Styles */
+
+.analytics-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.analytics-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Metric Cards */
+.metric-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-icon {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metric-value {
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.metric-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6B7280;
+}
+
+/* Performance Table */
+.performance-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.performance-table th {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #374151;
+    background-color: #F9FAFB;
+}
+
+.performance-table td {
+    padding: 1rem;
+    border-top: 1px solid #F3F4F6;
+}
+
+.performance-table tbody tr:hover {
+    background-color: #F9FAFB;
+}
+
+/* Progress Bar */
+.progress-bar {
+    width: 100%;
+    height: 0.5rem;
+    background-color: #E5E7EB;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3B82F6, #2563EB);
+    border-radius: 9999px;
+    transition: width 1s ease;
+}
+
+/* Chart Container */
+.chart-wrapper {
+    position: relative;
+    height: 250px;
+    margin-top: 1rem;
+}
+
+/* Department Stats */
+.dept-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.15s ease;
+}
+
+.dept-stat:hover {
+    background-color: #F9FAFB;
+}
+
+.dept-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background-color: #DBEAFE;
+    color: #1E40AF;
+}
+
+/* Trend Indicators */
+.trend-up {
+    color: #10B981;
+}
+
+.trend-down {
+    color: #EF4444;
+}
+
+.trend-neutral {
+    color: #6B7280;
+}
+
+/* Loading State */
+.skeleton {
+    background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .metric-value {
+        font-size: 1.875rem;
+    }
+
+    .performance-table {
+        font-size: 0.875rem;
+    }
+
+    .chart-wrapper {
+        height: 200px;
+    }
+}
