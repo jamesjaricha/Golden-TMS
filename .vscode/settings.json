@@ -23,5 +23,7 @@
         "**/storage/framework/sessions": true,
         "**/storage/framework/views": true,
         "**/storage/logs": true
-    }
+    },
+    "tailwindCSS.lint.cssConflict": "ignore",
+    "laravel.translation.diagnostics": false
 }

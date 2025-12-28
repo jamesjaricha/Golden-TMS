@@ -78,7 +78,7 @@ class Complaint extends Model
     /**
      * Scope for filtering by status
      */
-    public function scopeStatus($query, $status)
+    public function scopeStatus($query, string $status): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('status', $status);
     }
@@ -86,7 +86,7 @@ class Complaint extends Model
     /**
      * Scope for filtering by priority
      */
-    public function scopePriority($query, $priority)
+    public function scopePriority($query, string $priority): \Illuminate\Database\Eloquent\Builder
     {
         return $query->where('priority', $priority);
     }

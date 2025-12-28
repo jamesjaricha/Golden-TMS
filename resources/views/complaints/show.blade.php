@@ -8,6 +8,43 @@
                 <p class="text-sm text-apple-gray-500 mt-1">{{ $complaint->full_name }} • {{ $complaint->created_at->format('M d, Y h:i A') }}</p>
             </div>
             <div class="flex space-x-2">
+                <!-- Export Dropdown -->
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" @click.away="open = false"
+                           class="inline-flex items-center px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-medium rounded-apple hover:bg-apple-gray-200 transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                        </svg>
+                        Export
+                    </button>
+                    <div x-show="open"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-48 rounded-apple-lg shadow-apple-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                         style="display: none;">
+                        <div class="py-1">
+                            <a href="{{ route('complaints.print', $complaint) }}" target="_blank"
+                               class="flex items-center px-4 py-2 text-sm text-apple-gray-700 hover:bg-apple-gray-50 transition-colors">
+                                <svg class="w-5 h-5 mr-3 text-apple-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                                Print Ticket
+                            </a>
+                            <a href="{{ route('complaints.export-ticket-pdf', $complaint) }}"
+                               class="flex items-center px-4 py-2 text-sm text-apple-gray-700 hover:bg-apple-gray-50 transition-colors">
+                                <svg class="w-5 h-5 mr-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Download PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
                 <a href="{{ route('complaints.index') }}"
                    class="inline-flex items-center px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-medium rounded-apple hover:bg-apple-gray-200 transition-all duration-200">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

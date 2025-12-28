@@ -26,14 +26,14 @@ class Notification extends Model
         'data' => 'array',
     ];
 
-    public function user()
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function markAsRead()
+    public function markAsRead(): bool
     {
-        $this->update([
+        return $this->update([
             'read' => true,
             'read_at' => now(),
         ]);

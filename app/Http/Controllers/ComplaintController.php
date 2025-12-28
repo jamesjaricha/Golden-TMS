@@ -18,7 +18,33 @@ class ComplaintController extends Controller
      */
     public function index(Request $request)
     {
+        // Base query for the user's accessible complaints
+        $user = Auth::user();
+        $baseQuery = Complaint::query();
+
+        if ($user->role === 'user') {
+            // Regular users see only their created tickets
+            $baseQuery->where('captured_by', $user->id);
+        }
+        // Support agents, managers, and admins see all tickets
+
+        // Get status counts BEFORE applying filters (for accurate stat cards)
+        $statusCounts = [
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'resolved' => (clone $baseQuery)->where('status', 'resolved')->count(),
+            'escalated' => (clone $baseQuery)->where('status', 'escalated')->count(),
+            'assigned' => (clone $baseQuery)->where('status', 'assigned')->count(),
+            'closed' => (clone $baseQuery)->where('status', 'closed')->count(),
+        ];
+
+        // Now build the filtered query
         $query = Complaint::with(['capturedBy', 'assignedTo'])->latest();
+
+        // Apply role-based filtering
+        if ($user->role === 'user') {
+            $query->where('captured_by', $user->id);
+        }
 
         // Filter by status
         if ($request->filled('status')) {
@@ -41,20 +67,9 @@ class ComplaintController extends Controller
             });
         }
 
-        // Filter tickets based on role
-        $user = Auth::user();
-        if ($user->role === 'support_agent') {
-            // Support agents see only assigned tickets
-            $query->where('assigned_to', $user->id);
-        } elseif ($user->role === 'user') {
-            // Regular users see only their created tickets
-            $query->where('captured_by', $user->id);
-        }
-        // Admins and managers see all tickets (no filter)
-
         $complaints = $query->paginate(15);
 
-        return view('complaints.index', compact('complaints'));
+        return view('complaints.index', compact('complaints', 'statusCounts'));
     }
 
     /**
@@ -72,15 +87,21 @@ class ComplaintController extends Controller
     {
         try {
             $validated = $request->validate([
-                'policy_number' => ['required', 'string', 'max:255'],
+                'policy_number' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9\-_\/]+$/'],
                 'full_name' => ['required', 'string', 'max:255'],
-                'phone_number' => ['required', 'string', 'max:255'],
+                'phone_number' => ['required', 'string', 'max:20', 'regex:/^[\d\s\+\-\(\)]+$/'],
                 'location' => ['required', 'string', 'max:255'],
                 'visited_branch' => ['required', 'string', 'max:255'],
                 'department' => ['required', 'in:Billing,Claims,IT,General Support'],
-                'complaint_text' => ['required', 'string'],
+                'complaint_text' => ['required', 'string', 'max:10000'],
                 'priority' => ['required', 'in:low,medium,high,urgent'],
             ]);
+
+            // Sanitize text inputs
+            $validated['full_name'] = strip_tags($validated['full_name']);
+            $validated['location'] = strip_tags($validated['location']);
+            $validated['visited_branch'] = strip_tags($validated['visited_branch']);
+            $validated['complaint_text'] = strip_tags($validated['complaint_text']);
 
             $validated['captured_by'] = Auth::id();
             $validated['assigned_to'] = Auth::id(); // Auto-assign to creator
@@ -112,6 +133,15 @@ class ComplaintController extends Controller
      */
     public function show(Complaint $complaint)
     {
+        // Authorization: Check if user can view this complaint
+        $user = Auth::user();
+        // Regular users can only see their own tickets
+        if ($user->role === 'user' && $complaint->captured_by !== $user->id) {
+            abort(403, 'You can only view tickets you created.');
+        }
+        // Support agents, managers, and admins can view all tickets
+        // This allows agents to take over tickets when colleagues are unavailable
+
         $complaint->load(['capturedBy', 'assignedTo', 'comments.user']);
 
         // Load activity logs for this ticket with pagination
@@ -129,6 +159,15 @@ class ComplaintController extends Controller
      */
     public function edit(Complaint $complaint)
     {
+        // Authorization: Check if user can edit this complaint
+        $user = Auth::user();
+        // Regular users cannot edit tickets
+        if ($user->role === 'user') {
+            abort(403, 'You do not have permission to edit tickets.');
+        }
+        // Support agents, managers, and admins can edit all tickets
+        // This allows agents to take over tickets when colleagues are unavailable
+
         $agents = User::whereIn('role', ['support_agent', 'manager', 'super_admin'])->get();
         return view('complaints.edit', compact('complaint', 'agents'));
     }
@@ -138,14 +177,28 @@ class ComplaintController extends Controller
      */
     public function update(Request $request, Complaint $complaint)
     {
+        // Authorization check
+        $user = Auth::user();
+        // Regular users cannot update tickets
+        if ($user->role === 'user') {
+            abort(403, 'You do not have permission to update tickets.');
+        }
+        // Support agents, managers, and admins can update all tickets
+        // This allows agents to take over tickets when colleagues are unavailable
+
         try {
             $validated = $request->validate([
                 'status' => ['required', 'in:pending,assigned,in_progress,resolved,closed,escalated'],
                 'priority' => ['required', 'in:low,medium,high,urgent'],
                 'assigned_to' => ['nullable', 'exists:users,id'],
-                'resolution_notes' => ['nullable', 'string'],
-                'comment' => ['nullable', 'string'],
+                'resolution_notes' => ['nullable', 'string', 'max:10000'],
+                'comment' => ['nullable', 'string', 'max:5000'],
             ]);
+
+            // Sanitize text inputs
+            if (!empty($validated['resolution_notes'])) {
+                $validated['resolution_notes'] = strip_tags($validated['resolution_notes']);
+            }
 
             $oldStatus = $complaint->status;
             $oldAssignedTo = $complaint->assigned_to;
@@ -158,7 +211,7 @@ class ComplaintController extends Controller
                 ComplaintComment::create([
                     'complaint_id' => $complaint->id,
                     'user_id' => Auth::id(),
-                    'comment' => $request->comment,
+                    'comment' => strip_tags($request->comment),
                     'is_internal' => true,
                 ]);
 
@@ -177,7 +230,7 @@ class ComplaintController extends Controller
             }
 
             // Log assignment change
-            if ($request->filled('assigned_to') && $oldAssignedTo !== $request->assigned_to) {
+            if ($request->filled('assigned_to') && $oldAssignedTo !== (int) $request->assigned_to) {
                 $assignedUser = User::find($request->assigned_to);
                 ActivityLogService::logTicketAssigned($complaint, $assignedUser);
 
@@ -219,39 +272,50 @@ class ComplaintController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Complaint $complaint)
-    {
-        $ticketNumber = $complaint->ticket_number;
-        $complaint->delete();
-
-        ActivityLogService::log(
-            'ticket_deleted',
-            "Deleted ticket {$ticketNumber}",
-            null,
-            ['ticket_number' => $ticketNumber]
-        );
-
-        return redirect()->route('complaints.index')
-            ->with('success', 'Complaint deleted successfully!');
-    }
-
-    /**
-     * Assign ticket to user
+     * Assign ticket to user (supports takeover by any agent)
      */
     public function assign(Request $request, Complaint $complaint)
     {
+        // Allow support agents, managers, and admins to assign/takeover tickets
+        $user = Auth::user();
+        if (!in_array($user->role, ['super_admin', 'manager', 'support_agent'])) {
+            abort(403, 'Unauthorized to assign tickets.');
+        }
+
         $validated = $request->validate([
             'assigned_to' => ['required', 'exists:users,id'],
         ]);
 
+        $oldAssignedTo = $complaint->assignedTo;
         $complaint->update($validated);
-        $complaint->update(['status' => 'assigned']);
+
+        // Only change status to 'assigned' if it was pending
+        if ($complaint->status === 'pending') {
+            $complaint->update(['status' => 'assigned']);
+        }
 
         $assignedUser = User::find($request->assigned_to);
         ActivityLogService::logTicketAssigned($complaint, $assignedUser);
 
-        return back()->with('success', 'Ticket assigned successfully!');
+        // Log takeover activity if it was reassigned from another user
+        if ($oldAssignedTo && $oldAssignedTo->id !== $assignedUser->id) {
+            ActivityLogService::log(
+                'ticket_takeover',
+                "Ticket {$complaint->ticket_number} taken over from {$oldAssignedTo->name} by {$user->name}, assigned to {$assignedUser->name}",
+                $complaint,
+                [
+                    'previous_assignee' => $oldAssignedTo->name,
+                    'new_assignee' => $assignedUser->name,
+                    'taken_over_by' => $user->name,
+                ]
+            );
+        }
+
+        // Send notification to newly assigned user
+        if ($assignedUser->id !== $user->id) {
+            NotificationService::notifyTicketAssigned($complaint, $assignedUser);
+        }
+
+        return back()->with('success', 'Ticket assigned successfully to ' . $assignedUser->name . '!');
     }
 }

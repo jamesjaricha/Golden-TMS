@@ -36,12 +36,16 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
             'role' => ['required', 'in:super_admin,manager,support_agent,user'],
+        ], [
+            'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
         ]);
 
         try {
+            // Sanitize name
+            $validated['name'] = strip_tags($validated['name']);
             $validated['password'] = Hash::make($validated['password']);
             $validated['email_verified_at'] = now();
 
@@ -85,13 +89,18 @@ class UserController extends Controller
         try {
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+                'email' => ['required', 'string', 'email:rfc,dns', 'max:255', Rule::unique('users')->ignore($user->id)],
                 'role' => ['required', 'in:super_admin,manager,support_agent,user'],
             ]);
 
+            // Sanitize name
+            $validated['name'] = strip_tags($validated['name']);
+
             if ($request->filled('password')) {
                 $request->validate([
-                    'password' => ['required', 'string', 'min:8', 'confirmed'],
+                    'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
+                ], [
+                    'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
                 ]);
                 $validated['password'] = Hash::make($request->password);
             }

@@ -6,7 +6,6 @@ use App\Models\Complaint;
 use App\Models\ActivityLog;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
@@ -18,21 +17,12 @@ class DashboardController extends Controller
         $ticketQuery = Complaint::query();
 
         // Filter tickets based on role
-        if ($user->role === 'support_agent') {
-            $ticketQuery->where('assigned_to', $user->id);
-        } elseif ($user->role === 'user') {
+        if ($user->role === 'user') {
+            // Regular users see only their created tickets
             $ticketQuery->where('captured_by', $user->id);
         }
-        // Admins and managers see all tickets
-
-        // Debug: Log the query
-        Log::info('Dashboard Query', [
-            'user_id' => $user->id,
-            'user_role' => $user->role,
-            'user_name' => $user->name,
-            'query_sql' => $ticketQuery->toSql(),
-            'total_tickets_in_db' => Complaint::count(),
-        ]);
+        // Support agents, managers, and admins see all tickets
+        // This supports the collaborative ticket system where agents can take over
 
         // Calculate stats
         $totalTickets = $ticketQuery->count();

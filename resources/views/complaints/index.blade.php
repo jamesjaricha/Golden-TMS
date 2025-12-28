@@ -3,17 +3,78 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h2 class="font-semibold text-xl sm:text-2xl text-apple-gray-900 leading-tight">
-                    {{ __('Tickets & Complaints') }}
+                    Tickets & Complaints
                 </h2>
                 <p class="text-sm text-apple-gray-500 mt-1">Manage and track all customer complaints</p>
             </div>
-            <a href="{{ route('complaints.create') }}"
-               class="lg:hidden inline-flex items-center px-4 py-2 bg-apple-blue text-white font-semibold rounded-apple hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-apple-blue transition-all duration-200 shadow-apple hover:shadow-apple-md transform hover:scale-105">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                </svg>
-                New Complaint
-            </a>
+            <div class="flex gap-2">
+                <!-- Export Dropdown -->
+                <div x-data="{ open: false }" class="relative">
+                    <button @click="open = !open" @click.away="open = false"
+                           class="inline-flex items-center px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-semibold rounded-apple hover:bg-apple-gray-200 focus:outline-none focus:ring-2 focus:ring-apple-gray-400 transition-all duration-200">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+                        </svg>
+                        Export
+                        <svg class="w-4 h-4 ml-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    <div x-show="open"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="transform opacity-0 scale-95"
+                         x-transition:enter-end="transform opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="transform opacity-100 scale-100"
+                         x-transition:leave-end="transform opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-56 rounded-apple-lg shadow-apple-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                         style="display: none;">
+                        <div class="py-1">
+                            <a href="{{ route('complaints.export.excel', request()->all()) }}"
+                               class="flex items-center px-4 py-2 text-sm text-apple-gray-700 hover:bg-apple-gray-50 transition-colors">
+                                <svg class="w-5 h-5 mr-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Export to Excel
+                            </a>
+                            <a href="{{ route('complaints.export.pdf', request()->all()) }}"
+                               class="flex items-center px-4 py-2 text-sm text-apple-gray-700 hover:bg-apple-gray-50 transition-colors">
+                                <svg class="w-5 h-5 mr-3 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Export to PDF
+                            </a>
+                            <div class="border-t border-apple-gray-100 my-1"></div>
+                            <div class="px-4 py-2">
+                                <p class="text-xs text-apple-gray-500 mb-2">Monthly Reports</p>
+                                <form action="{{ route('reports.monthly') }}" method="GET" class="space-y-2">
+                                    <input type="month" name="month" value="{{ now()->format('Y-m') }}"
+                                           class="block w-full text-xs px-2 py-1 border border-apple-gray-300 rounded-apple focus:ring-apple-blue">
+                                    <div class="flex gap-1">
+                                        <button type="submit" name="format" value="excel"
+                                                class="flex-1 text-xs px-2 py-1 bg-green-50 text-green-700 rounded hover:bg-green-100">
+                                            Excel
+                                        </button>
+                                        <button type="submit" name="format" value="pdf"
+                                                class="flex-1 text-xs px-2 py-1 bg-red-50 text-red-700 rounded hover:bg-red-100">
+                                            PDF
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- New Complaint Button -->
+                <a href="{{ route('complaints.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-apple-blue text-white font-semibold rounded-apple hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-apple-blue transition-all duration-200 shadow-apple hover:shadow-apple-md transform hover:scale-105">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    New Complaint
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -65,113 +126,224 @@
             </form>
         </div>
 
+        <!-- Stats Summary -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <a href="{{ route('complaints.index', ['status' => 'pending']) }}"
+               class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-yellow-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'pending' ? 'ring-2 ring-yellow-400 ring-offset-2' : '' }}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-apple-gray-500 uppercase tracking-wide group-hover:text-yellow-600 transition-colors">Pending</p>
+                        <p class="text-2xl font-bold text-apple-gray-900 mt-1">{{ $statusCounts['pending'] }}</p>
+                    </div>
+                    <div class="p-2 bg-yellow-50 rounded-full group-hover:bg-yellow-100 transition-colors">
+                        <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-yellow-600 transition-colors">Click to filter →</p>
+            </a>
+            <a href="{{ route('complaints.index', ['status' => 'in_progress']) }}"
+               class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-indigo-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'in_progress' ? 'ring-2 ring-indigo-400 ring-offset-2' : '' }}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-apple-gray-500 uppercase tracking-wide group-hover:text-indigo-600 transition-colors">In Progress</p>
+                        <p class="text-2xl font-bold text-apple-gray-900 mt-1">{{ $statusCounts['in_progress'] }}</p>
+                    </div>
+                    <div class="p-2 bg-indigo-50 rounded-full group-hover:bg-indigo-100 transition-colors">
+                        <svg class="w-6 h-6 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-indigo-600 transition-colors">Click to filter →</p>
+            </a>
+            <a href="{{ route('complaints.index', ['status' => 'resolved']) }}"
+               class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-green-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'resolved' ? 'ring-2 ring-green-400 ring-offset-2' : '' }}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-apple-gray-500 uppercase tracking-wide group-hover:text-green-600 transition-colors">Resolved</p>
+                        <p class="text-2xl font-bold text-apple-gray-900 mt-1">{{ $statusCounts['resolved'] }}</p>
+                    </div>
+                    <div class="p-2 bg-green-50 rounded-full group-hover:bg-green-100 transition-colors">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-green-600 transition-colors">Click to filter →</p>
+            </a>
+            <a href="{{ route('complaints.index', ['status' => 'escalated']) }}"
+               class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-red-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'escalated' ? 'ring-2 ring-red-400 ring-offset-2' : '' }}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-apple-gray-500 uppercase tracking-wide group-hover:text-red-600 transition-colors">Escalated</p>
+                        <p class="text-2xl font-bold text-apple-gray-900 mt-1">{{ $statusCounts['escalated'] }}</p>
+                    </div>
+                    <div class="p-2 bg-red-50 rounded-full group-hover:bg-red-100 transition-colors">
+                        <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                </div>
+                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-red-600 transition-colors">Click to filter →</p>
+            </a>
+        </div>
+
         <!-- Tickets List - Desktop Table View -->
         <div class="hidden lg:block bg-white rounded-apple-lg shadow-apple overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-apple-gray-200">
-                    <thead class="bg-apple-gray-50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Ticket #
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Client
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Policy #
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Department
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Priority
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Assigned To
-                            </th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Created
-                            </th>
-                            <th class="px-6 py-4 text-right text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-apple-gray-100">
-                        @forelse($complaints as $complaint)
-                            <tr class="hover:bg-apple-gray-50 transition-colors duration-150">
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <a href="{{ route('complaints.show', $complaint) }}" class="text-apple-blue hover:text-blue-600 font-medium">
-                                        {{ $complaint->ticket_number }}
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm font-medium text-apple-gray-900">{{ $complaint->full_name }}</div>
-                                    <div class="text-sm text-apple-gray-500">{{ $complaint->phone_number }}</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-900">
+            <table class="w-full table-fixed divide-y divide-apple-gray-200">
+                <thead class="bg-gradient-to-r from-apple-gray-50 to-apple-gray-100">
+                    <tr>
+                        <th class="w-[10%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Ticket #
+                        </th>
+                        <th class="w-[18%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Client
+                        </th>
+                        <th class="w-[10%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Policy #
+                        </th>
+                        <th class="w-[12%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Department
+                        </th>
+                        <th class="w-[10%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Status
+                        </th>
+                        <th class="w-[8%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Priority
+                        </th>
+                        <th class="w-[14%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Assigned To
+                        </th>
+                        <th class="w-[10%] px-4 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Created
+                        </th>
+                        <th class="w-[8%] px-4 py-4 text-center text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                            Actions
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-apple-gray-100">
+                    @forelse($complaints as $complaint)
+                        <tr class="hover:bg-blue-50/50 transition-colors duration-150 group">
+                            <td class="px-4 py-4">
+                                <a href="{{ route('complaints.show', $complaint) }}" class="text-apple-blue hover:text-blue-600 font-semibold text-sm group-hover:underline">
+                                    {{ $complaint->ticket_number }}
+                                </a>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="min-w-0">
+                                    <p class="text-sm font-medium text-apple-gray-900 break-words leading-tight" title="{{ $complaint->full_name }}">
+                                        {{ $complaint->full_name }}
+                                    </p>
+                                    <p class="text-xs text-apple-gray-500 mt-0.5">{{ $complaint->phone_number }}</p>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <p class="text-sm text-apple-gray-900 break-words leading-tight" title="{{ $complaint->policy_number }}">
                                     {{ $complaint->policy_number }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-700">
+                                </p>
+                            </td>
+                            <td class="px-4 py-4">
+                                <p class="text-sm text-apple-gray-700 break-words leading-tight">
                                     {{ $complaint->department }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                                        @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800
-                                        @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800
-                                        @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800
-                                        @elseif($complaint->status === 'resolved') bg-green-100 text-green-800
-                                        @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800
-                                        @elseif($complaint->status === 'escalated') bg-red-100 text-red-800
-                                        @endif">
-                                        {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                                        @if($complaint->priority === 'low') bg-gray-100 text-gray-800
-                                        @elseif($complaint->priority === 'medium') bg-blue-100 text-blue-800
-                                        @elseif($complaint->priority === 'high') bg-orange-100 text-orange-800
-                                        @elseif($complaint->priority === 'urgent') bg-red-100 text-red-800
-                                        @endif">
-                                        {{ ucfirst($complaint->priority) }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-500">
-                                    {{ $complaint->assignedTo?->name ?? 'Unassigned' }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-500">
-                                    {{ $complaint->created_at->format('M d, Y') }}
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="{{ route('complaints.show', $complaint) }}"
-                                       class="text-apple-blue hover:text-blue-600 transition-colors">
-                                        View
-                                    </a>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="9" class="px-6 py-12 text-center">
-                                    <div class="text-apple-gray-400">
-                                        <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </p>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full whitespace-nowrap
+                                    @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200
+                                    @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800 ring-1 ring-blue-200
+                                    @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200
+                                    @elseif($complaint->status === 'resolved') bg-green-100 text-green-800 ring-1 ring-green-200
+                                    @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800 ring-1 ring-gray-200
+                                    @elseif($complaint->status === 'escalated') bg-red-100 text-red-800 ring-1 ring-red-200
+                                    @endif">
+                                    @if($complaint->status === 'pending')
+                                        <span class="w-1.5 h-1.5 mr-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
+                                    @elseif($complaint->status === 'in_progress')
+                                        <span class="w-1.5 h-1.5 mr-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+                                    @elseif($complaint->status === 'escalated')
+                                        <span class="w-1.5 h-1.5 mr-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                                    @endif
+                                    {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded
+                                    @if($complaint->priority === 'low') bg-gray-100 text-gray-700
+                                    @elseif($complaint->priority === 'medium') bg-blue-100 text-blue-700
+                                    @elseif($complaint->priority === 'high') bg-orange-100 text-orange-700
+                                    @elseif($complaint->priority === 'urgent') bg-red-100 text-red-700 animate-pulse
+                                    @endif">
+                                    @if($complaint->priority === 'urgent')
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                                         </svg>
-                                        <p class="text-sm font-medium">No tickets found</p>
-                                        <p class="text-xs mt-1">Try adjusting your search or filter criteria</p>
+                                    @endif
+                                    {{ ucfirst($complaint->priority) }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="flex items-center min-w-0">
+                                    @if($complaint->assignedTo)
+                                        <div class="flex-shrink-0 w-7 h-7 bg-gradient-to-br from-apple-blue to-indigo-600 rounded-full flex items-center justify-center mr-2">
+                                            <span class="text-xs font-medium text-white">{{ strtoupper(substr($complaint->assignedTo->name, 0, 1)) }}</span>
+                                        </div>
+                                        <p class="text-sm text-apple-gray-700 break-words leading-tight">{{ $complaint->assignedTo->name }}</p>
+                                    @else
+                                        <div class="flex-shrink-0 w-7 h-7 bg-apple-gray-200 rounded-full flex items-center justify-center mr-2">
+                                            <svg class="w-4 h-4 text-apple-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            </svg>
+                                        </div>
+                                        <span class="text-sm text-apple-gray-400 italic">Unassigned</span>
+                                    @endif
+                                </div>
+                            </td>
+                            <td class="px-4 py-4">
+                                <div class="text-sm text-apple-gray-500">
+                                    <p class="font-medium">{{ $complaint->created_at->format('M d') }}</p>
+                                    <p class="text-xs text-apple-gray-400">{{ $complaint->created_at->format('Y') }}</p>
+                                </div>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <a href="{{ route('complaints.show', $complaint) }}"
+                                   class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-apple-gray-100 text-apple-gray-600 hover:bg-apple-blue hover:text-white transition-all duration-200 group-hover:scale-110"
+                                   title="View Details">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="9" class="px-6 py-16 text-center">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-20 h-20 bg-apple-gray-100 rounded-full flex items-center justify-center mb-4">
+                                        <svg class="w-10 h-10 text-apple-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
                                     </div>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                    <p class="text-base font-medium text-apple-gray-700">No tickets found</p>
+                                    <p class="text-sm text-apple-gray-500 mt-1">Try adjusting your search or filter criteria</p>
+                                    <a href="{{ route('complaints.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-apple-blue text-white text-sm font-medium rounded-apple hover:bg-blue-600 transition-colors">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                        Create New Ticket
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
             @if($complaints->hasPages())
-                <div class="px-6 py-4 border-t border-apple-gray-200">
+                <div class="px-6 py-4 bg-apple-gray-50 border-t border-apple-gray-200">
                     {{ $complaints->links() }}
                 </div>
             @endif
@@ -179,75 +351,141 @@
 
         <!-- Tickets List - Mobile Card View -->
         <div class="space-y-4 lg:!hidden">
+            <!-- Mobile Stats Summary -->
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <a href="{{ route('complaints.index', ['status' => 'pending']) }}"
+                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-yellow-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'pending' ? 'ring-2 ring-yellow-400' : '' }}">
+                    <p class="text-xs text-apple-gray-500 uppercase">Pending</p>
+                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['pending'] }}</p>
+                    <p class="text-[10px] text-yellow-600 mt-1">Tap to filter →</p>
+                </a>
+                <a href="{{ route('complaints.index', ['status' => 'in_progress']) }}"
+                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-indigo-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'in_progress' ? 'ring-2 ring-indigo-400' : '' }}">
+                    <p class="text-xs text-apple-gray-500 uppercase">In Progress</p>
+                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['in_progress'] }}</p>
+                    <p class="text-[10px] text-indigo-600 mt-1">Tap to filter →</p>
+                </a>
+                <a href="{{ route('complaints.index', ['status' => 'resolved']) }}"
+                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-green-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'resolved' ? 'ring-2 ring-green-400' : '' }}">
+                    <p class="text-xs text-apple-gray-500 uppercase">Resolved</p>
+                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['resolved'] }}</p>
+                    <p class="text-[10px] text-green-600 mt-1">Tap to filter →</p>
+                </a>
+                <a href="{{ route('complaints.index', ['status' => 'escalated']) }}"
+                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-red-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'escalated' ? 'ring-2 ring-red-400' : '' }}">
+                    <p class="text-xs text-apple-gray-500 uppercase">Escalated</p>
+                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['escalated'] }}</p>
+                    <p class="text-[10px] text-red-600 mt-1">Tap to filter →</p>
+                </a>
+            </div>
+
             @forelse($complaints as $complaint)
-                <div class="bg-white rounded-apple-lg shadow-apple p-4 hover:shadow-apple-md transition-shadow duration-150">
-                    <div class="flex items-start justify-between mb-3">
-                        <div class="flex-1">
-                            <a href="{{ route('complaints.show', $complaint) }}" class="text-apple-blue hover:text-blue-600 font-semibold text-sm block mb-1">
+                <div class="bg-white rounded-apple-lg shadow-apple overflow-hidden hover:shadow-apple-md transition-shadow duration-150">
+                    <!-- Card Header with Status Indicator -->
+                    <div class="px-4 py-3 border-b border-apple-gray-100 bg-gradient-to-r from-apple-gray-50 to-white">
+                        <div class="flex items-center justify-between">
+                            <a href="{{ route('complaints.show', $complaint) }}" class="text-apple-blue hover:text-blue-600 font-bold text-sm">
                                 {{ $complaint->ticket_number }}
                             </a>
-                            <p class="text-sm font-medium text-apple-gray-900">{{ $complaint->full_name }}</p>
-                            <p class="text-xs text-apple-gray-500">{{ $complaint->phone_number }}</p>
-                        </div>
-                        <div class="flex flex-col items-end gap-2">
-                            <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-semibold rounded-full
-                                @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800
-                                @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800
-                                @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800
-                                @elseif($complaint->status === 'resolved') bg-green-100 text-green-800
-                                @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800
-                                @elseif($complaint->status === 'escalated') bg-red-100 text-red-800
-                                @endif">
-                                {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
-                            </span>
-                            <span class="px-2.5 py-1 inline-flex text-xs leading-4 font-semibold rounded-full
-                                @if($complaint->priority === 'low') bg-gray-100 text-gray-800
-                                @elseif($complaint->priority === 'medium') bg-blue-100 text-blue-800
-                                @elseif($complaint->priority === 'high') bg-orange-100 text-orange-800
-                                @elseif($complaint->priority === 'urgent') bg-red-100 text-red-800
-                                @endif">
-                                {{ ucfirst($complaint->priority) }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                            <span class="text-apple-gray-500 block">Policy #</span>
-                            <span class="text-apple-gray-900 font-medium">{{ $complaint->policy_number }}</span>
-                        </div>
-                        <div>
-                            <span class="text-apple-gray-500 block">Department</span>
-                            <span class="text-apple-gray-900 font-medium">{{ $complaint->department }}</span>
-                        </div>
-                        <div>
-                            <span class="text-apple-gray-500 block">Assigned To</span>
-                            <span class="text-apple-gray-900 font-medium">{{ $complaint->assignedTo?->name ?? 'Unassigned' }}</span>
-                        </div>
-                        <div>
-                            <span class="text-apple-gray-500 block">Created</span>
-                            <span class="text-apple-gray-900 font-medium">{{ $complaint->created_at->format('M d, Y') }}</span>
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded
+                                    @if($complaint->priority === 'low') bg-gray-100 text-gray-700
+                                    @elseif($complaint->priority === 'medium') bg-blue-100 text-blue-700
+                                    @elseif($complaint->priority === 'high') bg-orange-100 text-orange-700
+                                    @elseif($complaint->priority === 'urgent') bg-red-100 text-red-700
+                                    @endif">
+                                    @if($complaint->priority === 'urgent')
+                                        <span class="w-1.5 h-1.5 mr-1 bg-red-500 rounded-full animate-pulse"></span>
+                                    @endif
+                                    {{ ucfirst($complaint->priority) }}
+                                </span>
+                                <span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full
+                                    @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200
+                                    @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800 ring-1 ring-blue-200
+                                    @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200
+                                    @elseif($complaint->status === 'resolved') bg-green-100 text-green-800 ring-1 ring-green-200
+                                    @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800 ring-1 ring-gray-200
+                                    @elseif($complaint->status === 'escalated') bg-red-100 text-red-800 ring-1 ring-red-200
+                                    @endif">
+                                    @if(in_array($complaint->status, ['pending', 'in_progress', 'escalated']))
+                                        <span class="w-1.5 h-1.5 mr-1.5 rounded-full animate-pulse
+                                            @if($complaint->status === 'pending') bg-yellow-500
+                                            @elseif($complaint->status === 'in_progress') bg-indigo-500
+                                            @else bg-red-500
+                                            @endif"></span>
+                                    @endif
+                                    {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="mt-3 pt-3 border-t border-apple-gray-100">
+                    <!-- Card Body -->
+                    <div class="p-4">
+                        <div class="flex items-start gap-3 mb-3">
+                            <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-apple-blue to-indigo-600 rounded-full flex items-center justify-center">
+                                <span class="text-sm font-semibold text-white">{{ strtoupper(substr($complaint->full_name, 0, 1)) }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-semibold text-apple-gray-900 break-words">{{ $complaint->full_name }}</p>
+                                <p class="text-xs text-apple-gray-500">{{ $complaint->phone_number }}</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 text-xs">
+                            <div class="bg-apple-gray-50 rounded-lg p-2">
+                                <span class="text-apple-gray-500 block mb-0.5">Policy #</span>
+                                <span class="text-apple-gray-900 font-medium break-words">{{ $complaint->policy_number }}</span>
+                            </div>
+                            <div class="bg-apple-gray-50 rounded-lg p-2">
+                                <span class="text-apple-gray-500 block mb-0.5">Department</span>
+                                <span class="text-apple-gray-900 font-medium break-words">{{ $complaint->department }}</span>
+                            </div>
+                            <div class="bg-apple-gray-50 rounded-lg p-2">
+                                <span class="text-apple-gray-500 block mb-0.5">Assigned To</span>
+                                <span class="text-apple-gray-900 font-medium break-words">
+                                    @if($complaint->assignedTo)
+                                        {{ $complaint->assignedTo->name }}
+                                    @else
+                                        <span class="text-apple-gray-400 italic">Unassigned</span>
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="bg-apple-gray-50 rounded-lg p-2">
+                                <span class="text-apple-gray-500 block mb-0.5">Created</span>
+                                <span class="text-apple-gray-900 font-medium">{{ $complaint->created_at->format('M d, Y') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer -->
+                    <div class="px-4 py-3 bg-apple-gray-50 border-t border-apple-gray-100">
                         <a href="{{ route('complaints.show', $complaint) }}"
-                           class="inline-flex items-center text-sm font-medium text-apple-blue hover:text-blue-600 transition-colors">
-                            View Details
-                            <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                           class="flex items-center justify-center w-full py-2 text-sm font-medium text-apple-blue hover:text-white hover:bg-apple-blue rounded-apple transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
+                            View Details
                         </a>
                     </div>
                 </div>
             @empty
                 <div class="bg-white rounded-apple-lg shadow-apple p-8 text-center">
-                    <div class="text-apple-gray-400">
-                        <svg class="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <p class="text-sm font-medium">No tickets found</p>
-                        <p class="text-xs mt-1">Try adjusting your search or filter criteria</p>
+                    <div class="flex flex-col items-center">
+                        <div class="w-16 h-16 bg-apple-gray-100 rounded-full flex items-center justify-center mb-4">
+                            <svg class="w-8 h-8 text-apple-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium text-apple-gray-700">No tickets found</p>
+                        <p class="text-xs text-apple-gray-500 mt-1">Try adjusting your search or filter criteria</p>
+                        <a href="{{ route('complaints.create') }}" class="mt-4 inline-flex items-center px-4 py-2 bg-apple-blue text-white text-sm font-medium rounded-apple hover:bg-blue-600 transition-colors">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                            </svg>
+                            Create New Ticket
+                        </a>
                     </div>
                 </div>
             @endforelse
