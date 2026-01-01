@@ -46,6 +46,9 @@
                                 Role
                             </th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
+                                Department
+                            </th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
                                 Joined
                             </th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-apple-gray-700 uppercase tracking-wider">
@@ -80,6 +83,15 @@
                                         @endif">
                                         {{ ucwords(str_replace('_', ' ', $user->role)) }}
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($user->department)
+                                        <span class="px-2 py-1 text-xs bg-indigo-100 text-indigo-800 rounded">
+                                            {{ $user->department->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-apple-gray-400">No Department</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-apple-gray-500">
                                     {{ $user->created_at->format('M d, Y') }}

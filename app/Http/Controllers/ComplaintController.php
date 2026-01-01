@@ -4,12 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\Complaint;
 use App\Models\User;
+use App\Models\Branch;
+use App\Models\Employer;
+use App\Models\PaymentMethod;
+use App\Models\Department;
 use App\Models\ComplaintComment;
 use App\Services\ActivityLogService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class ComplaintController extends Controller
 {
@@ -18,58 +23,48 @@ class ComplaintController extends Controller
      */
     public function index(Request $request)
     {
-        // Base query for the user's accessible complaints
         $user = Auth::user();
-        $baseQuery = Complaint::query();
 
-        if ($user->role === 'user') {
-            // Regular users see only their created tickets
-            $baseQuery->where('captured_by', $user->id);
-        }
-        // Support agents, managers, and admins see all tickets
+        // OPTIMIZED: Single query for status counts using DB::raw for better performance
+        $statusCountsQuery = Complaint::query()
+            ->forUser($user)
+            ->selectRaw('
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status = "in_progress" THEN 1 ELSE 0 END) as in_progress,
+                SUM(CASE WHEN status = "partial_closed" THEN 1 ELSE 0 END) as partial_closed,
+                SUM(CASE WHEN status = "resolved" THEN 1 ELSE 0 END) as resolved,
+                SUM(CASE WHEN status = "escalated" THEN 1 ELSE 0 END) as escalated,
+                SUM(CASE WHEN status = "assigned" THEN 1 ELSE 0 END) as assigned,
+                SUM(CASE WHEN status = "closed" THEN 1 ELSE 0 END) as closed
+            ')
+            ->first();
 
-        // Get status counts BEFORE applying filters (for accurate stat cards)
         $statusCounts = [
-            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
-            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
-            'resolved' => (clone $baseQuery)->where('status', 'resolved')->count(),
-            'escalated' => (clone $baseQuery)->where('status', 'escalated')->count(),
-            'assigned' => (clone $baseQuery)->where('status', 'assigned')->count(),
-            'closed' => (clone $baseQuery)->where('status', 'closed')->count(),
+            'pending' => $statusCountsQuery->pending ?? 0,
+            'in_progress' => $statusCountsQuery->in_progress ?? 0,
+            'partial_closed' => $statusCountsQuery->partial_closed ?? 0,
+            'resolved' => $statusCountsQuery->resolved ?? 0,
+            'escalated' => $statusCountsQuery->escalated ?? 0,
+            'assigned' => $statusCountsQuery->assigned ?? 0,
+            'closed' => $statusCountsQuery->closed ?? 0,
         ];
 
-        // Now build the filtered query
-        $query = Complaint::with(['capturedBy', 'assignedTo'])->latest();
+        // OPTIMIZED: Build filtered query using scopes for cleaner code and better performance
+        $complaints = Complaint::with(['capturedBy', 'assignedTo'])
+            ->forUser($user)
+            ->byStatus($request->status)
+            ->byPriority($request->priority)
+            ->byBranch($request->branch_id)
+            ->dateRange($request->start_date, $request->end_date)
+            ->search($request->search)
+            ->latest()
+            ->paginate(15)
+            ->appends($request->query());
 
-        // Apply role-based filtering
-        if ($user->role === 'user') {
-            $query->where('captured_by', $user->id);
-        }
+        $branches = Branch::orderBy('name')->get();
 
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Filter by priority
-        if ($request->filled('priority')) {
-            $query->where('priority', $request->priority);
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('ticket_number', 'like', "%{$search}%")
-                  ->orWhere('policy_number', 'like', "%{$search}%")
-                  ->orWhere('full_name', 'like', "%{$search}%")
-                  ->orWhere('phone_number', 'like', "%{$search}%");
-            });
-        }
-
-        $complaints = $query->paginate(15);
-
-        return view('complaints.index', compact('complaints', 'statusCounts'));
+        return view('complaints.index', compact('complaints', 'statusCounts', 'branches'));
     }
 
     /**
@@ -77,7 +72,11 @@ class ComplaintController extends Controller
      */
     public function create()
     {
-        return view('complaints.create');
+        $branches = Branch::orderBy('name')->get();
+        $employers = Employer::active()->orderBy('name')->get();
+        $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
+        $departments = Department::active()->orderBy('name')->get();
+        return view('complaints.create', compact('branches', 'employers', 'paymentMethods', 'departments'));
     }
 
     /**
@@ -89,33 +88,48 @@ class ComplaintController extends Controller
             $validated = $request->validate([
                 'policy_number' => ['required', 'string', 'max:255', 'regex:/^[a-zA-Z0-9\-_\/]+$/'],
                 'full_name' => ['required', 'string', 'max:255'],
-                'phone_number' => ['required', 'string', 'max:20', 'regex:/^[\d\s\+\-\(\)]+$/'],
+                'phone_number' => ['required', 'string', 'size:12', 'regex:/^263\d{9}$/'],
                 'location' => ['required', 'string', 'max:255'],
-                'visited_branch' => ['required', 'string', 'max:255'],
-                'department' => ['required', 'in:Billing,Claims,IT,General Support'],
+                'visited_branch' => ['nullable', 'string', 'max:255'],
+                'branch_id' => ['required', 'exists:branches,id'],
+                'employer_id' => ['required', 'exists:employers,id'],
+                'payment_method_id' => ['required', 'exists:payment_methods,id'],
+                'department_id' => ['required', 'exists:departments,id'],
                 'complaint_text' => ['required', 'string', 'max:10000'],
                 'priority' => ['required', 'in:low,medium,high,urgent'],
+            ], [
+                'phone_number.size' => 'Phone number must be exactly 12 digits in international format (e.g., 263776905912)',
+                'phone_number.regex' => 'Phone number must start with 263 followed by 9 digits (e.g., 263776905912)',
             ]);
 
             // Sanitize text inputs
             $validated['full_name'] = strip_tags($validated['full_name']);
             $validated['location'] = strip_tags($validated['location']);
-            $validated['visited_branch'] = strip_tags($validated['visited_branch']);
+            if (!empty($validated['visited_branch'])) {
+                $validated['visited_branch'] = strip_tags($validated['visited_branch']);
+            }
             $validated['complaint_text'] = strip_tags($validated['complaint_text']);
 
             $validated['captured_by'] = Auth::id();
             $validated['assigned_to'] = Auth::id(); // Auto-assign to creator
             $validated['status'] = 'assigned'; // Set to assigned since we have an assignee
 
+            // Sync visited_branch from branch
+            $branch = Branch::find($validated['branch_id']);
+            $validated['visited_branch'] = $branch?->name;
+
             $complaint = Complaint::create($validated);
 
             // Log activity
             ActivityLogService::logTicketCreated($complaint);
 
-            // Send notification to assigned user
+            // Send notifications asynchronously to avoid blocking the response
+            // This dispatches to queue so ticket creation is fast
             if ($complaint->assigned_to) {
                 $assignedUser = User::find($complaint->assigned_to);
-                NotificationService::notifyTicketAssigned($complaint, $assignedUser);
+                dispatch(function () use ($complaint, $assignedUser) {
+                    NotificationService::notifyTicketAssigned($complaint, $assignedUser);
+                })->afterResponse();
             }
 
             return redirect()->route('complaints.show', $complaint)
@@ -169,7 +183,11 @@ class ComplaintController extends Controller
         // This allows agents to take over tickets when colleagues are unavailable
 
         $agents = User::whereIn('role', ['support_agent', 'manager', 'super_admin'])->get();
-        return view('complaints.edit', compact('complaint', 'agents'));
+        $branches = Branch::orderBy('name')->get();
+        $employers = Employer::active()->orderBy('name')->get();
+        $paymentMethods = PaymentMethod::active()->orderBy('name')->get();
+        $departments = Department::active()->orderBy('name')->get();
+        return view('complaints.edit', compact('complaint', 'agents', 'branches', 'employers', 'paymentMethods', 'departments'));
     }
 
     /**
@@ -188,21 +206,50 @@ class ComplaintController extends Controller
 
         try {
             $validated = $request->validate([
-                'status' => ['required', 'in:pending,assigned,in_progress,resolved,closed,escalated'],
+                'status' => ['required', 'in:pending,assigned,in_progress,resolved,closed,escalated,partial_closed'],
                 'priority' => ['required', 'in:low,medium,high,urgent'],
                 'assigned_to' => ['nullable', 'exists:users,id'],
+                'branch_id' => ['required', 'exists:branches,id'],
+                'employer_id' => ['required', 'exists:employers,id'],
+                'payment_method_id' => ['required', 'exists:payment_methods,id'],
                 'resolution_notes' => ['nullable', 'string', 'max:10000'],
                 'comment' => ['nullable', 'string', 'max:5000'],
+                // Partial closed fields
+                'pending_department' => ['nullable', 'required_if:status,partial_closed', 'in:Billing,Claims,IT,General Support'],
+                'completed_department' => ['nullable', 'in:Billing,Claims,IT,General Support'],
+                'partial_close_notes' => ['nullable', 'string', 'max:5000'],
             ]);
 
             // Sanitize text inputs
             if (!empty($validated['resolution_notes'])) {
                 $validated['resolution_notes'] = strip_tags($validated['resolution_notes']);
             }
+            if (!empty($validated['partial_close_notes'])) {
+                $validated['partial_close_notes'] = strip_tags($validated['partial_close_notes']);
+            }
+
+            // Sync visited_branch from branch
+            $branch = Branch::find($validated['branch_id']);
+            $validated['visited_branch'] = $branch?->name;
 
             $oldStatus = $complaint->status;
             $oldAssignedTo = $complaint->assigned_to;
             $changes = [];
+
+            // Handle partial closed status
+            if ($validated['status'] === 'partial_closed') {
+                $validated['partial_closed_at'] = now();
+                // Set completed department to current department if not specified
+                if (empty($validated['completed_department'])) {
+                    $validated['completed_department'] = $complaint->department;
+                }
+            } elseif ($oldStatus === 'partial_closed' && $validated['status'] !== 'partial_closed') {
+                // If moving from partial_closed to another status, clear partial close fields
+                if (in_array($validated['status'], ['resolved', 'closed'])) {
+                    // Keep the notes for record but clear pending department
+                    $validated['pending_department'] = null;
+                }
+            }
 
             $complaint->update(collect($validated)->except('comment')->toArray());
 
@@ -226,7 +273,16 @@ class ComplaintController extends Controller
             // Log status change
             if ($oldStatus !== $validated['status']) {
                 ActivityLogService::logTicketStatusUpdate($complaint, $oldStatus, $validated['status']);
-                $changes[] = 'status changed to ' . ucwords(str_replace('_', ' ', $validated['status']));
+
+                // Build status change message
+                $statusMessage = 'status changed to ' . ucwords(str_replace('_', ' ', $validated['status']));
+                if ($validated['status'] === 'partial_closed' && !empty($validated['pending_department'])) {
+                    $statusMessage .= ' (awaiting ' . $validated['pending_department'] . ')';
+                }
+                $changes[] = $statusMessage;
+
+                // Send WhatsApp notification to customer about status change
+                NotificationService::sendWhatsAppStatusUpdate($complaint, $oldStatus, $validated['status']);
             }
 
             // Log assignment change

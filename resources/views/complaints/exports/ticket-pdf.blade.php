@@ -99,7 +99,7 @@
         <div class="info-grid">
             <div class="info-row">
                 <div class="info-label">Department</div>
-                <div class="info-value">{{ $complaint->department }}</div>
+                <div class="info-value">{{ $complaint->department->name ?? 'N/A' }}</div>
             </div>
             <div class="info-row">
                 <div class="info-label">Status</div>

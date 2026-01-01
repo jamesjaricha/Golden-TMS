@@ -22,22 +22,27 @@
         </style>
     </head>
     <body class="font-sans antialiased bg-apple-gray-50">
-        <div class="min-h-screen">
-            @include('layouts.navigation')
+        <div class="min-h-screen flex">
+            @include('layouts.sidebar')
 
-            <!-- Page Heading -->
-            @isset($header)
-                <header class="bg-white/80 backdrop-blur-xl shadow-apple border-b border-apple-gray-100">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endisset
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col">
+                @include('layouts.topbar')
 
-            <!-- Page Content -->
-            <main class="py-8">
-                {{ $slot }}
-            </main>
+                <!-- Page Heading -->
+                @isset($header)
+                    <header class="bg-white/80 backdrop-blur-xl shadow-apple border-b border-apple-gray-100">
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endisset
+
+                <!-- Page Content -->
+                <main class="flex-1 py-8">
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
 
         <!-- Notification Component -->
@@ -58,6 +63,8 @@
                 });
             }
         </script>
+
+        @stack('scripts')
     </body>
 </html>
 

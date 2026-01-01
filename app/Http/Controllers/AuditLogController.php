@@ -15,43 +15,51 @@ class AuditLogController extends Controller
     {
         $query = AuditLog::with('user')->latest();
 
-        // Filter by category
-        if ($request->filled('category')) {
-            $query->where('action_category', $request->category);
-        }
+        // Check if any filters are applied
+        $hasFilters = $request->filled(['category', 'action', 'user_id', 'status', 'date_from', 'date_to', 'search']);
 
-        // Filter by action
-        if ($request->filled('action')) {
-            $query->where('action', $request->action);
-        }
+        // If no filters applied, default to today's logs only
+        if (!$hasFilters) {
+            $query->whereDate('created_at', today());
+        } else {
+            // Filter by category
+            if ($request->filled('category')) {
+                $query->where('action_category', $request->category);
+            }
 
-        // Filter by user
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
+            // Filter by action
+            if ($request->filled('action')) {
+                $query->where('action', $request->action);
+            }
 
-        // Filter by status
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
+            // Filter by user
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
 
-        // Filter by date range
-        if ($request->filled('date_from')) {
-            $query->whereDate('created_at', '>=', $request->date_from);
-        }
-        if ($request->filled('date_to')) {
-            $query->whereDate('created_at', '<=', $request->date_to);
-        }
+            // Filter by status
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
 
-        // Search in description
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                  ->orWhere('auditable_identifier', 'like', "%{$search}%")
-                  ->orWhere('user_name', 'like', "%{$search}%")
-                  ->orWhere('ip_address', 'like', "%{$search}%");
-            });
+            // Filter by date range
+            if ($request->filled('date_from')) {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to')) {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            // Search in description
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('description', 'like', "%{$search}%")
+                      ->orWhere('auditable_identifier', 'like', "%{$search}%")
+                      ->orWhere('user_name', 'like', "%{$search}%")
+                      ->orWhere('ip_address', 'like', "%{$search}%");
+                });
+            }
         }
 
         $logs = $query->paginate(25)->withQueryString();

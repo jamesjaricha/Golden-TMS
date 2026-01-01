@@ -56,4 +56,35 @@ class DashboardController extends Controller
             'ticketsByStatus'
         ));
     }
+
+    /**
+     * Get recent activity for AJAX refresh
+     */
+    public function getActivity()
+    {
+        $user = Auth::user();
+
+        // Non-admins only see their own activities
+        $activityQuery = ActivityLog::with('user');
+
+        if (!in_array($user->role, ['super_admin', 'manager'])) {
+            $activityQuery->where('user_id', $user->id);
+        }
+
+        $recentActivity = $activityQuery->latest()
+            ->limit(10)
+            ->get();
+
+        return response()->json([
+            'activities' => $recentActivity->map(function($activity) {
+                return [
+                    'id' => $activity->id,
+                    'description' => $activity->description,
+                    'user_name' => $activity->user->name ?? 'System',
+                    'created_at' => $activity->created_at->diffForHumans(),
+                    'type' => $activity->event_type,
+                ];
+            })
+        ]);
+    }
 }

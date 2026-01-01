@@ -104,7 +104,7 @@
                 <dd>{{ $complaint->policy_number }}</dd>
 
                 <dt>Department:</dt>
-                <dd>{{ $complaint->department }}</dd>
+                <dd>{{ $complaint->department->name ?? 'N/A' }}</dd>
 
                 <dt>Priority:</dt>
                 <dd>

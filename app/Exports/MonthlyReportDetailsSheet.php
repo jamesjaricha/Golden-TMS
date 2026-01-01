@@ -52,7 +52,7 @@ class MonthlyReportDetailsSheet implements FromQuery, WithTitle, WithHeadings, W
         return [
             $complaint->ticket_number,
             $complaint->full_name,
-            $complaint->department,
+            $complaint->department->name ?? 'N/A',
             ucwords(str_replace('_', ' ', $complaint->status)),
             ucfirst($complaint->priority),
             $complaint->assignedTo?->name ?? 'Unassigned',

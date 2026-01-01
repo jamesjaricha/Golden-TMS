@@ -37,6 +37,21 @@
                             class="px-4 py-2 rounded-apple transition-all duration-200">
                             {{ __('Users') }}
                         </x-nav-link>
+
+                        <x-nav-link :href="route('branches.index')" :active="request()->routeIs('branches.*')"
+                            class="px-4 py-2 rounded-apple transition-all duration-200">
+                            {{ __('Branches') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('employers.index')" :active="request()->routeIs('employers.*')"
+                            class="px-4 py-2 rounded-apple transition-all duration-200">
+                            {{ __('Employers') }}
+                        </x-nav-link>
+
+                        <x-nav-link :href="route('payment-methods.index')" :active="request()->routeIs('payment-methods.*')"
+                            class="px-4 py-2 rounded-apple transition-all duration-200">
+                            {{ __('Payment Methods') }}
+                        </x-nav-link>
                     @endif
                 </div>
             </div>
@@ -153,6 +168,12 @@
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
+                        @if(Auth::user()->isSuperAdmin())
+                            <x-dropdown-link :href="route('audit-logs.index')">
+                                {{ __('Audit Logs') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
@@ -200,6 +221,18 @@
                 <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.*')">
                     {{ __('Users') }}
                 </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('branches.index')" :active="request()->routeIs('branches.*')">
+                    {{ __('Branches') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('employers.index')" :active="request()->routeIs('employers.*')">
+                    {{ __('Employers') }}
+                </x-responsive-nav-link>
+
+                <x-responsive-nav-link :href="route('payment-methods.index')" :active="request()->routeIs('payment-methods.*')">
+                    {{ __('Payment Methods') }}
+                </x-responsive-nav-link>
             @endif
         </div>
 
@@ -219,6 +252,12 @@
                 <x-responsive-nav-link :href="route('profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+
+                @if(Auth::user()->isSuperAdmin())
+                    <x-responsive-nav-link :href="route('audit-logs.index')">
+                        {{ __('Audit Logs') }}
+                    </x-responsive-nav-link>
+                @endif
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">

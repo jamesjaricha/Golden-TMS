@@ -5,7 +5,13 @@
                 <h2 class="font-semibold text-xl sm:text-2xl text-apple-gray-900 leading-tight">
                     Audit Logs
                 </h2>
-                <p class="text-sm text-apple-gray-500 mt-1">Track all system activities and changes</p>
+                <p class="text-sm text-apple-gray-500 mt-1">
+                    @if(request()->hasAny(['category', 'action', 'user_id', 'status', 'date_from', 'date_to', 'search']))
+                        Showing filtered results
+                    @else
+                        Showing today's activity - Use filters to view more
+                    @endif
+                </p>
             </div>
             <div class="flex gap-2">
                 <a href="{{ route('audit-logs.export', request()->all()) }}"
@@ -74,11 +80,31 @@
                            placeholder="To Date"
                            class="block w-full px-4 py-2 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue text-sm">
                     <button type="submit" class="px-4 py-2 bg-apple-blue text-white font-medium rounded-apple hover:bg-blue-600 transition-all text-sm whitespace-nowrap">
-                        Filter
+                        Apply Filters
                     </button>
+                    @if(request()->hasAny(['category', 'action', 'user_id', 'status', 'date_from', 'date_to', 'search']))
+                        <a href="{{ route('audit-logs.index') }}" class="px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-medium rounded-apple hover:bg-apple-gray-200 transition-all text-sm whitespace-nowrap">
+                            Clear
+                        </a>
+                    @endif
                 </div>
             </form>
         </div>
+
+        <!-- Info Banner -->
+        @if(!request()->hasAny(['category', 'action', 'user_id', 'status', 'date_from', 'date_to', 'search']))
+            <div class="bg-blue-50 border border-blue-200 rounded-apple-lg p-4 mb-6">
+                <div class="flex items-start">
+                    <svg class="w-5 h-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div>
+                        <p class="text-sm font-medium text-blue-900">Showing today's activity only</p>
+                        <p class="text-xs text-blue-700 mt-1">Use the filters above to view historical logs or search for specific activities.</p>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Audit Log List -->
         <div class="bg-white rounded-apple-lg shadow-apple overflow-hidden">

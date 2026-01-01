@@ -99,7 +99,7 @@
                         <strong>{{ $complaint->full_name }}</strong><br>
                         <small>{{ $complaint->phone_number }}</small>
                     </td>
-                    <td>{{ $complaint->department }}</td>
+                    <td>{{ $complaint->department->name ?? 'N/A' }}</td>
                     <td>
                         <span class="badge badge-{{ $complaint->status }}">
                             {{ ucwords(str_replace('_', ' ', $complaint->status)) }}

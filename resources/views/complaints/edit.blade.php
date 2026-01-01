@@ -35,6 +35,7 @@
                         <option value="pending" {{ old('status', $complaint->status) === 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="assigned" {{ old('status', $complaint->status) === 'assigned' ? 'selected' : '' }}>Assigned</option>
                         <option value="in_progress" {{ old('status', $complaint->status) === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                        <option value="partial_closed" {{ old('status', $complaint->status) === 'partial_closed' ? 'selected' : '' }}>⏳ Partial Closed (Awaiting Another Dept)</option>
                         <option value="resolved" {{ old('status', $complaint->status) === 'resolved' ? 'selected' : '' }}>Resolved</option>
                         <option value="closed" {{ old('status', $complaint->status) === 'closed' ? 'selected' : '' }}>Closed</option>
                         <option value="escalated" {{ old('status', $complaint->status) === 'escalated' ? 'selected' : '' }}>Escalated</option>
@@ -42,6 +43,131 @@
                     @error('status')
                         <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                </div>
+
+                <!-- Branch -->
+                <div>
+                    <label for="branch_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                        Branch <span class="text-red-500">*</span>
+                    </label>
+                    <select id="branch_id"
+                            name="branch_id"
+                            required
+                            class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('branch_id') ring-2 ring-red-500 @enderror">
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}" {{ old('branch_id', $complaint->branch_id) == $branch->id ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('branch_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Employer -->
+                <div>
+                    <label for="employer_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                        Employer <span class="text-red-500">*</span>
+                    </label>
+                    <select id="employer_id"
+                            name="employer_id"
+                            required
+                            class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('employer_id') ring-2 ring-red-500 @enderror">
+                        @foreach($employers as $employer)
+                            <option value="{{ $employer->id }}" {{ old('employer_id', $complaint->employer_id) == $employer->id ? 'selected' : '' }}>
+                                {{ $employer->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('employer_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Payment Method -->
+                <div>
+                    <label for="payment_method_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                        Payment Method <span class="text-red-500">*</span>
+                    </label>
+                    <select id="payment_method_id"
+                            name="payment_method_id"
+                            required
+                            class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('payment_method_id') ring-2 ring-red-500 @enderror">
+                        @foreach($paymentMethods as $paymentMethod)
+                            <option value="{{ $paymentMethod->id }}" {{ old('payment_method_id', $complaint->payment_method_id) == $paymentMethod->id ? 'selected' : '' }}>
+                                {{ $paymentMethod->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('payment_method_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Partial Closed Section - Shows when status is partial_closed -->
+                <div id="partial-closed-section" class="bg-orange-50 border border-orange-200 rounded-apple p-4 space-y-4" style="display: {{ old('status', $complaint->status) === 'partial_closed' ? 'block' : 'none' }};">
+                    <div class="flex items-center gap-2 text-orange-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="font-semibold">Partial Closure Details</span>
+                    </div>
+                    <p class="text-sm text-orange-700">Your department has completed its work, but another department needs to take action.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Completed Department -->
+                        <div>
+                            <label for="completed_department" class="block text-sm font-medium text-orange-900 mb-2">
+                                Your Department (Completed)
+                            </label>
+                            <input type="text"
+                                   id="completed_department"
+                                   name="completed_department"
+                                   value="{{ old('completed_department', $complaint->completed_department ?? auth()->user()->department->name ?? 'N/A') }}"
+                                   readonly
+                                   class="block w-full px-4 py-3 bg-gray-100 border border-orange-200 rounded-apple text-gray-700 cursor-not-allowed">
+                            <p class="mt-1 text-xs text-orange-600">Automatically set from your assigned department</p>
+                        </div>
+
+                        <!-- Pending Department -->
+                        <div>
+                            <label for="pending_department" class="block text-sm font-medium text-orange-900 mb-2">
+                                Awaiting Department <span class="text-red-500">*</span>
+                            </label>
+                            <select id="pending_department"
+                                    name="pending_department"
+                                    required
+                                    class="block w-full px-4 py-3 bg-white border border-orange-200 rounded-apple focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
+                                <option value="">-- Select Department --</option>
+                                @foreach($departments as $department)
+                                    @if(auth()->user()->department_id != $department->id)
+                                        <option value="{{ $department->name }}" {{ old('pending_department', $complaint->pending_department) === $department->name ? 'selected' : '' }}>
+                                            {{ $department->name }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </select>
+                            @error('pending_department')
+                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <!-- Partial Close Notes -->
+                    <div>
+                        <label for="partial_close_notes" class="block text-sm font-medium text-orange-900 mb-2">
+                            Notes for Pending Department
+                        </label>
+                        <textarea id="partial_close_notes"
+                                  name="partial_close_notes"
+                                  rows="3"
+                                  class="block w-full px-4 py-3 bg-white border border-orange-200 rounded-apple focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                                  placeholder="Describe what the other department needs to do (e.g., 'IT needs to update client data in the system')...">{{ old('partial_close_notes', $complaint->partial_close_notes) }}</textarea>
+                        @error('partial_close_notes')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
                 </div>
 
                 <!-- Priority -->
@@ -74,7 +200,7 @@
                         <option value="">Unassigned</option>
                         @foreach($agents as $agent)
                             <option value="{{ $agent->id }}" {{ old('assigned_to', $complaint->assigned_to) == $agent->id ? 'selected' : '' }}>
-                                {{ $agent->name }} ({{ ucwords(str_replace('_', ' ', $agent->role)) }})
+                                {{ $agent->name }}
                             </option>
                         @endforeach
                     </select>
@@ -143,7 +269,15 @@
                         </div>
                         <div>
                             <p class="text-xs text-apple-gray-500">Department</p>
-                            <p class="text-sm font-medium text-apple-gray-900">{{ $complaint->department }}</p>
+                            <p class="text-sm font-medium text-apple-gray-900">{{ $complaint->department->name ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-apple-gray-500">Employer</p>
+                            <p class="text-sm font-medium text-apple-gray-900">{{ $complaint->employer?->name ?? 'N/A' }}</p>
+                        </div>
+                        <div>
+                            <p class="text-xs text-apple-gray-500">Payment Method</p>
+                            <p class="text-sm font-medium text-apple-gray-900">{{ $complaint->paymentMethod?->name ?? 'N/A' }}</p>
                         </div>
                     </div>
                 </div>
@@ -162,4 +296,26 @@
             </form>
         </div>
     </div>
+
+    <script>
+        // Toggle partial closed section visibility
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusSelect = document.getElementById('status');
+            const partialClosedSection = document.getElementById('partial-closed-section');
+            const pendingDepartmentSelect = document.getElementById('pending_department');
+
+            function togglePartialClosedSection() {
+                if (statusSelect.value === 'partial_closed') {
+                    partialClosedSection.style.display = 'block';
+                    pendingDepartmentSelect.setAttribute('required', 'required');
+                } else {
+                    partialClosedSection.style.display = 'none';
+                    pendingDepartmentSelect.removeAttribute('required');
+                }
+            }
+
+            statusSelect.addEventListener('change', togglePartialClosedSection);
+            togglePartialClosedSection(); // Initial check
+        });
+    </script>
 </x-app-layout>

@@ -83,6 +83,53 @@
                     </p>
                 </div>
 
+                <!-- Department -->
+                <div>
+                    <label for="department_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                        Department (Optional)
+                    </label>
+                    <select id="department_id"
+                            name="department_id"
+                            class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('department_id') ring-2 ring-red-500 @enderror">
+                        <option value="">No Department</option>
+                        @foreach($departments as $department)
+                            <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                {{ $department->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('department_id')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                    <p class="mt-2 text-xs text-apple-gray-500">
+                        Used for partial closure workflow - automatically fills "Completed Department"
+                    </p>
+                </div>
+
+                <!-- Primary Branch -->
+                <div>
+                    <label for="branch_ids" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                        Primary Branch <span class="text-red-500">*</span>
+                    </label>
+                    <select id="branch_ids"
+                            name="branch_ids[]"
+                            required
+                            class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('branch_ids') ring-2 ring-red-500 @enderror">
+                        @php
+                            $harareHQ = $branches->firstWhere('name', 'Harare HQ');
+                            $defaultBranchId = old('branch_ids.0', $harareHQ?->id);
+                        @endphp
+                        @foreach($branches as $branch)
+                            <option value="{{ $branch->id }}" {{ $defaultBranchId == $branch->id ? 'selected' : '' }}>
+                                {{ $branch->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('branch_ids')
+                        <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 <!-- Password -->
                 <div>
                     <label for="password" class="block text-sm font-medium text-apple-gray-700 mb-2">

@@ -54,7 +54,7 @@
                     <!-- Phone Number -->
                     <div>
                         <label for="phone_number" class="block text-sm font-medium text-apple-gray-700 mb-2">
-                            Phone Number <span class="text-red-500">*</span>
+                            Phone Number / WhatsApp <span class="text-red-500">*</span>
                         </label>
                         <input id="phone_number"
                                type="tel"
@@ -62,7 +62,15 @@
                                value="{{ old('phone_number') }}"
                                required
                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('phone_number') ring-2 ring-red-500 @enderror"
-                               placeholder="077 690 5912">
+                               placeholder="263776905912"
+                               pattern="[0-9]{12}"
+                               maxlength="12">
+                        <p class="mt-1 text-xs sm:text-sm text-apple-gray-500 flex items-start">
+                            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-blue-500 mr-1 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                            <span>Enter in international format: 263776905912 (country code + number, no spaces or +)</span>
+                        </p>
                         @error('phone_number')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -85,62 +93,86 @@
                         @enderror
                     </div>
 
-                    <!-- Visited Branch -->
+                    <!-- Branch -->
                     <div>
-                        <label for="visited_branch" class="block text-sm font-medium text-apple-gray-700 mb-2">
-                            Branch Visited <span class="text-red-500">*</span>
+                        <label for="branch_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                            Branch <span class="text-red-500">*</span>
                         </label>
-                        <select id="visited_branch"
-                                name="visited_branch"
+                        <select id="branch_id"
+                                name="branch_id"
                                 required
-                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('visited_branch') ring-2 ring-red-500 @enderror">
+                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('branch_id') ring-2 ring-red-500 @enderror">
                             <option value="">Select Branch</option>
-                            <option value="Beitbridge" {{ old('visited_branch') === 'Beitbridge' ? 'selected' : '' }}>Beitbridge</option>
-                            <option value="Bindura" {{ old('visited_branch') === 'Bindura' ? 'selected' : '' }}>Bindura</option>
-                            <option value="Bulawayo" {{ old('visited_branch') === 'Bulawayo' ? 'selected' : '' }}>Bulawayo</option>
-                            <option value="Chinhoyi" {{ old('visited_branch') === 'Chinhoyi' ? 'selected' : '' }}>Chinhoyi</option>
-                            <option value="Chipinge" {{ old('visited_branch') === 'Chipinge' ? 'selected' : '' }}>Chipinge</option>
-                            <option value="Chiredzi" {{ old('visited_branch') === 'Chiredzi' ? 'selected' : '' }}>Chiredzi</option>
-                            <option value="Chitungwiza" {{ old('visited_branch') === 'Chitungwiza' ? 'selected' : '' }}>Chitungwiza</option>
-                            <option value="Epworth" {{ old('visited_branch') === 'Epworth' ? 'selected' : '' }}>Epworth</option>
-                            <option value="Gokwe" {{ old('visited_branch') === 'Gokwe' ? 'selected' : '' }}>Gokwe</option>
-                            <option value="Guruve" {{ old('visited_branch') === 'Guruve' ? 'selected' : '' }}>Guruve</option>
-                            <option value="Gwanda" {{ old('visited_branch') === 'Gwanda' ? 'selected' : '' }}>Gwanda</option>
-                            <option value="Gweru" {{ old('visited_branch') === 'Gweru' ? 'selected' : '' }}>Gweru</option>
-                            <option value="Harare HQ" {{ old('visited_branch') === 'Harare HQ' ? 'selected' : '' }}>Harare HQ</option>
-                            <option value="Kadoma" {{ old('visited_branch') === 'Kadoma' ? 'selected' : '' }}>Kadoma</option>
-                            <option value="Karoi" {{ old('visited_branch') === 'Karoi' ? 'selected' : '' }}>Karoi</option>
-                            <option value="Kwekwe" {{ old('visited_branch') === 'Kwekwe' ? 'selected' : '' }}>Kwekwe</option>
-                            <option value="Marondera" {{ old('visited_branch') === 'Marondera' ? 'selected' : '' }}>Marondera</option>
-                            <option value="Masvingo" {{ old('visited_branch') === 'Masvingo' ? 'selected' : '' }}>Masvingo</option>
-                            <option value="Mutare" {{ old('visited_branch') === 'Mutare' ? 'selected' : '' }}>Mutare</option>
-                            <option value="Mutoko" {{ old('visited_branch') === 'Mutoko' ? 'selected' : '' }}>Mutoko</option>
-                            <option value="Ngezi" {{ old('visited_branch') === 'Ngezi' ? 'selected' : '' }}>Ngezi</option>
-                            <option value="Nyanga" {{ old('visited_branch') === 'Nyanga' ? 'selected' : '' }}>Nyanga</option>
-                            <option value="Rusape" {{ old('visited_branch') === 'Rusape' ? 'selected' : '' }}>Rusape</option>
-                            <option value="Zvishavane" {{ old('visited_branch') === 'Zvishavane' ? 'selected' : '' }}>Zvishavane</option>
+                            @foreach($branches as $branch)
+                                <option value="{{ $branch->id }}" {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
+                                    {{ $branch->name }}
+                                </option>
+                            @endforeach
                         </select>
-                        @error('visited_branch')
+                        @error('branch_id')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <!-- Department -->
                     <div>
-                        <label for="department" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                        <label for="department_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
                             Department <span class="text-red-500">*</span>
                         </label>
-                        <select id="department"
-                                name="department"
+                        <select id="department_id"
+                                name="department_id"
                                 required
-                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('department') ring-2 ring-red-500 @enderror">
+                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('department_id') ring-2 ring-red-500 @enderror">
                             <option value="">Select Department</option>
-                            <option value="Billing" {{ old('department') === 'Billing' ? 'selected' : '' }}>Billing</option>
-                            <option value="Claims" {{ old('department') === 'Claims' ? 'selected' : '' }}>Claims</option>
-                            <option value="IT" {{ old('department') === 'IT' ? 'selected' : '' }}>IT</option>
-                            <option value="General Support" {{ old('department') === 'General Support' ? 'selected' : '' }}>General Support</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                    {{ $department->name }}
+                                </option>
+                            @endforeach
                         </select>
-                        @error('department')
+                        @error('department_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Employer -->
+                    <div>
+                        <label for="employer_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                            Employer <span class="text-red-500">*</span>
+                        </label>
+                        <select id="employer_id"
+                                name="employer_id"
+                                required
+                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('employer_id') ring-2 ring-red-500 @enderror">
+                            <option value="">Select Employer</option>
+                            @foreach($employers as $employer)
+                                <option value="{{ $employer->id }}" {{ old('employer_id') == $employer->id ? 'selected' : '' }}>
+                                    {{ $employer->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('employer_id')
+                            <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div>
+                        <label for="payment_method_id" class="block text-sm font-medium text-apple-gray-700 mb-2">
+                            Payment Method <span class="text-red-500">*</span>
+                        </label>
+                        <select id="payment_method_id"
+                                name="payment_method_id"
+                                required
+                                class="block w-full px-4 py-3 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue focus:bg-white transition-all duration-200 @error('payment_method_id') ring-2 ring-red-500 @enderror">
+                            <option value="">Select Payment Method</option>
+                            @foreach($paymentMethods as $paymentMethod)
+                                <option value="{{ $paymentMethod->id }}" {{ old('payment_method_id') == $paymentMethod->id ? 'selected' : '' }}>
+                                    {{ $paymentMethod->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('payment_method_id')
                             <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
@@ -210,4 +242,63 @@
             </form>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const phoneInput = document.getElementById('phone_number');
+
+            // Auto-format phone number to WhatsApp international format
+            phoneInput.addEventListener('input', function(e) {
+                let value = e.target.value;
+
+                // Remove all non-numeric characters
+                value = value.replace(/\D/g, '');
+
+                // If starts with 0, replace with 263 (Zimbabwe country code)
+                if (value.startsWith('0')) {
+                    value = '263' + value.substring(1);
+                }
+
+                // If doesn't start with country code, add 263
+                if (!value.startsWith('263') && value.length > 0) {
+                    value = '263' + value;
+                }
+
+                // Limit to 12 digits (263 + 9 digits)
+                value = value.substring(0, 12);
+
+                e.target.value = value;
+            });
+
+            // Format on blur to ensure proper format
+            phoneInput.addEventListener('blur', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+
+                if (value.length > 0) {
+                    // Ensure it starts with 263
+                    if (value.startsWith('0')) {
+                        value = '263' + value.substring(1);
+                    } else if (!value.startsWith('263')) {
+                        value = '263' + value;
+                    }
+
+                    // Ensure it's exactly 12 digits
+                    if (value.length < 12) {
+                        e.target.setCustomValidity('Phone number must be 12 digits (263 + 9 digits)');
+                    } else {
+                        e.target.setCustomValidity('');
+                    }
+
+                    e.target.value = value;
+                }
+            });
+
+            // Clear custom validity on input
+            phoneInput.addEventListener('input', function(e) {
+                e.target.setCustomValidity('');
+            });
+        });
+    </script>
+    @endpush
 </x-app-layout>

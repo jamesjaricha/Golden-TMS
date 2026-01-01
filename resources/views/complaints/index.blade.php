@@ -87,47 +87,93 @@
 
         <!-- Filters -->
         <div class="bg-white rounded-apple-lg shadow-apple p-4 sm:p-6 mb-6">
-            <form method="GET" action="{{ route('complaints.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div class="sm:col-span-2 lg:col-span-1">
-                    <input type="text"
-                           name="search"
-                           value="{{ request('search') }}"
-                           placeholder="Search tickets..."
-                           class="block w-full px-4 py-2 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue text-sm">
-                </div>
-                <div>
-                    <select name="status" class="block w-full px-4 py-2 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue text-sm">
-                        <option value="">All Statuses</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="assigned" {{ request('status') === 'assigned' ? 'selected' : '' }}>Assigned</option>
-                        <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                        <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Resolved</option>
-                        <option value="closed" {{ request('status') === 'closed' ? 'selected' : '' }}>Closed</option>
-                        <option value="escalated" {{ request('status') === 'escalated' ? 'selected' : '' }}>Escalated</option>
-                    </select>
-                </div>
-                <div>
-                    <select name="priority" class="block w-full px-4 py-2 bg-apple-gray-50 border-0 rounded-apple focus:ring-2 focus:ring-apple-blue text-sm">
-                        <option value="">All Priorities</option>
-                        <option value="low" {{ request('priority') === 'low' ? 'selected' : '' }}>Low</option>
-                        <option value="medium" {{ request('priority') === 'medium' ? 'selected' : '' }}>Medium</option>
-                        <option value="high" {{ request('priority') === 'high' ? 'selected' : '' }}>High</option>
-                        <option value="urgent" {{ request('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option>
-                    </select>
-                </div>
-                <div class="flex gap-2 sm:col-span-2 lg:col-span-1">
-                    <button type="submit" class="flex-1 px-4 py-2 bg-apple-blue text-white font-medium rounded-apple hover:bg-blue-600 transition-all text-sm">
-                        Filter
-                    </button>
-                    <a href="{{ route('complaints.index') }}" class="px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-medium rounded-apple hover:bg-apple-gray-200 transition-all text-sm">
-                        Reset
-                    </a>
+            <form method="GET" action="{{ route('complaints.index') }}">
+                <div class="space-y-4">
+                    <!-- Search -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-medium uppercase tracking-wide text-apple-gray-600">Search</label>
+                        <input type="text"
+                               name="search"
+                               value="{{ request('search') }}"
+                               placeholder="Search tickets..."
+                               class="block w-full px-4 py-2.5 bg-apple-gray-50 border border-apple-gray-200 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue text-sm transition-all">
+                    </div>
+
+                    <!-- Status & Priority Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-medium uppercase tracking-wide text-apple-gray-600">Status</label>
+                            <select name="status" class="block w-full px-4 py-2.5 bg-apple-gray-50 border border-apple-gray-200 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue text-sm transition-all">
+                                <option value="">All Statuses</option>
+                                <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="assigned" {{ request('status') === 'assigned' ? 'selected' : '' }}>Assigned</option>
+                                <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                <option value="partial_closed" {{ request('status') === 'partial_closed' ? 'selected' : '' }}>⏳ Partial Closed</option>
+                                <option value="resolved" {{ request('status') === 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                <option value="closed" {{ request('status') === 'closed' ? 'selected' : '' }}>Closed</option>
+                                <option value="escalated" {{ request('status') === 'escalated' ? 'selected' : '' }}>Escalated</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-medium uppercase tracking-wide text-apple-gray-600">Priority</label>
+                            <select name="priority" class="block w-full px-4 py-2.5 bg-apple-gray-50 border border-apple-gray-200 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue text-sm transition-all">
+                                <option value="">All Priorities</option>
+                                <option value="low" {{ request('priority') === 'low' ? 'selected' : '' }}>Low</option>
+                                <option value="medium" {{ request('priority') === 'medium' ? 'selected' : '' }}>Medium</option>
+                                <option value="high" {{ request('priority') === 'high' ? 'selected' : '' }}>High</option>
+                                <option value="urgent" {{ request('priority') === 'urgent' ? 'selected' : '' }}>Urgent</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-medium uppercase tracking-wide text-apple-gray-600">Branch</label>
+                            <select name="branch_id" class="block w-full px-4 py-2.5 bg-apple-gray-50 border border-apple-gray-200 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue text-sm transition-all">
+                                <option value="">All Branches</option>
+                                @foreach($branches as $branch)
+                                    <option value="{{ $branch->id }}" {{ (string)request('branch_id') === (string)$branch->id ? 'selected' : '' }}>{{ $branch->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Date Range Row -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-medium uppercase tracking-wide text-apple-gray-600">From</label>
+                            <input type="date"
+                                   name="start_date"
+                                   value="{{ request('start_date') }}"
+                                   class="block w-full px-4 py-2.5 bg-apple-gray-50 border border-apple-gray-200 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue text-sm transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-medium uppercase tracking-wide text-apple-gray-600">To</label>
+                            <input type="date"
+                                   name="end_date"
+                                   value="{{ request('end_date') }}"
+                                   class="block w-full px-4 py-2.5 bg-apple-gray-50 border border-apple-gray-200 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue text-sm transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="grid grid-cols-2 gap-3 pt-2">
+                        <button type="submit" class="w-full px-4 py-2.5 bg-apple-blue text-white font-semibold rounded-apple hover:bg-blue-600 focus:ring-2 focus:ring-apple-blue focus:ring-offset-2 transition-all text-sm shadow-apple-sm">
+                            <svg class="w-4 h-4 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                            </svg>
+                            Filter
+                        </button>
+                        <a href="{{ route('complaints.index') }}" class="w-full px-4 py-2.5 bg-apple-gray-100 text-apple-gray-700 font-semibold rounded-apple hover:bg-apple-gray-200 focus:ring-2 focus:ring-apple-gray-400 focus:ring-offset-2 transition-all text-sm text-center">
+                            <svg class="w-4 h-4 inline-block mr-2 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                            Reset
+                        </a>
+                    </div>
                 </div>
             </form>
         </div>
 
         <!-- Stats Summary -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <a href="{{ route('complaints.index', ['status' => 'pending']) }}"
                class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-yellow-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'pending' ? 'ring-2 ring-yellow-400 ring-offset-2' : '' }}">
                 <div class="flex items-center justify-between">
@@ -141,7 +187,6 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-yellow-600 transition-colors">Click to filter →</p>
             </a>
             <a href="{{ route('complaints.index', ['status' => 'in_progress']) }}"
                class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-indigo-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'in_progress' ? 'ring-2 ring-indigo-400 ring-offset-2' : '' }}">
@@ -156,7 +201,20 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-indigo-600 transition-colors">Click to filter →</p>
+            </a>
+            <a href="{{ route('complaints.index', ['status' => 'partial_closed']) }}"
+               class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-orange-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'partial_closed' ? 'ring-2 ring-orange-400 ring-offset-2' : '' }}">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-medium text-apple-gray-500 uppercase tracking-wide group-hover:text-orange-600 transition-colors">Partial</p>
+                        <p class="text-2xl font-bold text-apple-gray-900 mt-1">{{ $statusCounts['partial_closed'] ?? 0 }}</p>
+                    </div>
+                    <div class="p-2 bg-orange-50 rounded-full group-hover:bg-orange-100 transition-colors">
+                        <svg class="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+                        </svg>
+                    </div>
+                </div>
             </a>
             <a href="{{ route('complaints.index', ['status' => 'resolved']) }}"
                class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-green-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'resolved' ? 'ring-2 ring-green-400 ring-offset-2' : '' }}">
@@ -171,7 +229,6 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-green-600 transition-colors">Click to filter →</p>
             </a>
             <a href="{{ route('complaints.index', ['status' => 'escalated']) }}"
                class="bg-white rounded-apple-lg shadow-apple p-4 border-l-4 border-red-400 hover:shadow-apple-md hover:scale-[1.02] transition-all duration-200 cursor-pointer group {{ request('status') === 'escalated' ? 'ring-2 ring-red-400 ring-offset-2' : '' }}">
@@ -186,7 +243,6 @@
                         </svg>
                     </div>
                 </div>
-                <p class="text-xs text-apple-gray-400 mt-2 group-hover:text-red-600 transition-colors">Click to filter →</p>
             </a>
         </div>
 
@@ -247,7 +303,7 @@
                             </td>
                             <td class="px-4 py-4">
                                 <p class="text-sm text-apple-gray-700 break-words leading-tight">
-                                    {{ $complaint->department }}
+                                    {{ $complaint->department->name ?? 'N/A' }}
                                 </p>
                             </td>
                             <td class="px-4 py-4">
@@ -255,6 +311,7 @@
                                     @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200
                                     @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800 ring-1 ring-blue-200
                                     @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200
+                                    @elseif($complaint->status === 'partial_closed') bg-orange-100 text-orange-800 ring-1 ring-orange-200
                                     @elseif($complaint->status === 'resolved') bg-green-100 text-green-800 ring-1 ring-green-200
                                     @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800 ring-1 ring-gray-200
                                     @elseif($complaint->status === 'escalated') bg-red-100 text-red-800 ring-1 ring-red-200
@@ -263,11 +320,16 @@
                                         <span class="w-1.5 h-1.5 mr-1.5 bg-yellow-500 rounded-full animate-pulse"></span>
                                     @elseif($complaint->status === 'in_progress')
                                         <span class="w-1.5 h-1.5 mr-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+                                    @elseif($complaint->status === 'partial_closed')
+                                        <span class="w-1.5 h-1.5 mr-1.5 bg-orange-500 rounded-full animate-pulse"></span>
                                     @elseif($complaint->status === 'escalated')
                                         <span class="w-1.5 h-1.5 mr-1.5 bg-red-500 rounded-full animate-pulse"></span>
                                     @endif
                                     {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
                                 </span>
+                                @if($complaint->status === 'partial_closed' && $complaint->pending_department)
+                                    <p class="text-xs text-orange-600 mt-1">⏳ {{ $complaint->pending_department }}</p>
+                                @endif
                             </td>
                             <td class="px-4 py-4">
                                 <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded
@@ -351,34 +413,6 @@
 
         <!-- Tickets List - Mobile Card View -->
         <div class="space-y-4 lg:!hidden">
-            <!-- Mobile Stats Summary -->
-            <div class="grid grid-cols-2 gap-3 mb-2">
-                <a href="{{ route('complaints.index', ['status' => 'pending']) }}"
-                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-yellow-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'pending' ? 'ring-2 ring-yellow-400' : '' }}">
-                    <p class="text-xs text-apple-gray-500 uppercase">Pending</p>
-                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['pending'] }}</p>
-                    <p class="text-[10px] text-yellow-600 mt-1">Tap to filter →</p>
-                </a>
-                <a href="{{ route('complaints.index', ['status' => 'in_progress']) }}"
-                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-indigo-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'in_progress' ? 'ring-2 ring-indigo-400' : '' }}">
-                    <p class="text-xs text-apple-gray-500 uppercase">In Progress</p>
-                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['in_progress'] }}</p>
-                    <p class="text-[10px] text-indigo-600 mt-1">Tap to filter →</p>
-                </a>
-                <a href="{{ route('complaints.index', ['status' => 'resolved']) }}"
-                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-green-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'resolved' ? 'ring-2 ring-green-400' : '' }}">
-                    <p class="text-xs text-apple-gray-500 uppercase">Resolved</p>
-                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['resolved'] }}</p>
-                    <p class="text-[10px] text-green-600 mt-1">Tap to filter →</p>
-                </a>
-                <a href="{{ route('complaints.index', ['status' => 'escalated']) }}"
-                   class="bg-white rounded-apple p-3 shadow-apple border-l-4 border-red-400 hover:shadow-apple-md active:scale-95 transition-all duration-150 {{ request('status') === 'escalated' ? 'ring-2 ring-red-400' : '' }}">
-                    <p class="text-xs text-apple-gray-500 uppercase">Escalated</p>
-                    <p class="text-xl font-bold text-apple-gray-900">{{ $statusCounts['escalated'] }}</p>
-                    <p class="text-[10px] text-red-600 mt-1">Tap to filter →</p>
-                </a>
-            </div>
-
             @forelse($complaints as $complaint)
                 <div class="bg-white rounded-apple-lg shadow-apple overflow-hidden hover:shadow-apple-md transition-shadow duration-150">
                     <!-- Card Header with Status Indicator -->
@@ -403,19 +437,24 @@
                                     @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800 ring-1 ring-yellow-200
                                     @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800 ring-1 ring-blue-200
                                     @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200
+                                    @elseif($complaint->status === 'partial_closed') bg-orange-100 text-orange-800 ring-1 ring-orange-200
                                     @elseif($complaint->status === 'resolved') bg-green-100 text-green-800 ring-1 ring-green-200
                                     @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800 ring-1 ring-gray-200
                                     @elseif($complaint->status === 'escalated') bg-red-100 text-red-800 ring-1 ring-red-200
                                     @endif">
-                                    @if(in_array($complaint->status, ['pending', 'in_progress', 'escalated']))
+                                    @if(in_array($complaint->status, ['pending', 'in_progress', 'partial_closed', 'escalated']))
                                         <span class="w-1.5 h-1.5 mr-1.5 rounded-full animate-pulse
                                             @if($complaint->status === 'pending') bg-yellow-500
                                             @elseif($complaint->status === 'in_progress') bg-indigo-500
+                                            @elseif($complaint->status === 'partial_closed') bg-orange-500
                                             @else bg-red-500
                                             @endif"></span>
                                     @endif
                                     {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
                                 </span>
+                                @if($complaint->status === 'partial_closed' && $complaint->pending_department)
+                                    <span class="text-xs text-orange-600">⏳ {{ $complaint->pending_department }}</span>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -439,7 +478,7 @@
                             </div>
                             <div class="bg-apple-gray-50 rounded-lg p-2">
                                 <span class="text-apple-gray-500 block mb-0.5">Department</span>
-                                <span class="text-apple-gray-900 font-medium break-words">{{ $complaint->department }}</span>
+                                <span class="text-apple-gray-900 font-medium break-words">{{ $complaint->department->name ?? 'N/A' }}</span>
                             </div>
                             <div class="bg-apple-gray-50 rounded-lg p-2">
                                 <span class="text-apple-gray-500 block mb-0.5">Assigned To</span>

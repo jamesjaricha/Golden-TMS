@@ -90,6 +90,47 @@
                     </div>
                 @endif
 
+                <!-- Partial Close Notes -->
+                @if($complaint->status === 'partial_closed' || $complaint->partial_close_notes)
+                    <div class="bg-orange-50 border border-orange-200 rounded-apple-lg p-6">
+                        <h3 class="text-lg font-semibold text-orange-900 mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Partial Closure - Awaiting {{ $complaint->pending_department ?? 'Another Department' }}
+                        </h3>
+                        <div class="space-y-3">
+                            @if($complaint->completed_department)
+                                <div class="flex items-center text-orange-800">
+                                    <svg class="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    <span class="text-sm"><strong>{{ $complaint->completed_department }}</strong> has completed their work</span>
+                                </div>
+                            @endif
+                            @if($complaint->pending_department)
+                                <div class="flex items-center text-orange-800">
+                                    <svg class="w-4 h-4 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span class="text-sm"><strong>{{ $complaint->pending_department }}</strong> is still working on this ticket</span>
+                                </div>
+                            @endif
+                            @if($complaint->partial_close_notes)
+                                <div class="mt-3 pt-3 border-t border-orange-200">
+                                    <p class="text-sm font-medium text-orange-900 mb-1">Notes:</p>
+                                    <p class="text-orange-800 whitespace-pre-wrap">{{ $complaint->partial_close_notes }}</p>
+                                </div>
+                            @endif
+                            @if($complaint->partial_closed_at)
+                                <p class="text-xs text-orange-600 mt-2">
+                                    Partial closed on {{ $complaint->partial_closed_at->format('M d, Y h:i A') }}
+                                </p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 <!-- Client Information -->
                 <div class="bg-white rounded-apple-lg shadow-apple p-6">
                     <h3 class="text-lg font-semibold text-apple-gray-900 mb-4">Client Information</h3>
@@ -116,7 +157,15 @@
                         </div>
                         <div>
                             <dt class="text-sm font-medium text-apple-gray-500">Department</dt>
-                            <dd class="mt-1 text-sm text-apple-gray-900">{{ $complaint->department }}</dd>
+                            <dd class="mt-1 text-sm text-apple-gray-900">{{ $complaint->department->name ?? 'N/A' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-apple-gray-500">Employer</dt>
+                            <dd class="mt-1 text-sm text-apple-gray-900">{{ $complaint->employer?->name ?? 'N/A' }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-sm font-medium text-apple-gray-500">Payment Method</dt>
+                            <dd class="mt-1 text-sm text-apple-gray-900">{{ $complaint->paymentMethod?->name ?? 'N/A' }}</dd>
                         </div>
                     </dl>
                 </div>
@@ -174,6 +223,7 @@
                                 @if($complaint->status === 'pending') bg-yellow-100 text-yellow-800
                                 @elseif($complaint->status === 'assigned') bg-blue-100 text-blue-800
                                 @elseif($complaint->status === 'in_progress') bg-indigo-100 text-indigo-800
+                                @elseif($complaint->status === 'partial_closed') bg-orange-100 text-orange-800
                                 @elseif($complaint->status === 'resolved') bg-green-100 text-green-800
                                 @elseif($complaint->status === 'closed') bg-gray-100 text-gray-800
                                 @elseif($complaint->status === 'escalated') bg-red-100 text-red-800
@@ -181,6 +231,34 @@
                                 {{ ucwords(str_replace('_', ' ', $complaint->status)) }}
                             </span>
                         </div>
+
+                        @if($complaint->status === 'partial_closed')
+                            <!-- Partial Closed Info Box -->
+                            <div class="bg-orange-50 border border-orange-200 rounded-apple p-3 mt-2">
+                                <div class="flex items-center gap-2 text-orange-800 mb-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    <span class="text-xs font-semibold">Partial Closure</span>
+                                </div>
+                                @if($complaint->completed_department)
+                                    <p class="text-xs text-orange-700">
+                                        <span class="font-medium">✓ Completed:</span> {{ $complaint->completed_department }}
+                                    </p>
+                                @endif
+                                @if($complaint->pending_department)
+                                    <p class="text-xs text-orange-700 mt-1">
+                                        <span class="font-medium">⏳ Awaiting:</span> {{ $complaint->pending_department }}
+                                    </p>
+                                @endif
+                                @if($complaint->partial_closed_at)
+                                    <p class="text-xs text-orange-600 mt-1">
+                                        Since {{ $complaint->partial_closed_at->format('M d, Y h:i A') }}
+                                    </p>
+                                @endif
+                            </div>
+                        @endif
+
                         <div>
                             <dt class="text-sm font-medium text-apple-gray-500 mb-2">Priority</dt>
                             <span class="px-3 py-1 inline-flex text-sm font-semibold rounded-full
@@ -209,6 +287,68 @@
                                 {{ $complaint->assignedTo?->name ?? 'Not Assigned' }}
                             </dd>
                         </div>
+
+                        @if(Auth::user()->role === 'support_agent' && $complaint->assigned_to !== Auth::id() && !in_array($complaint->status, ['closed', 'resolved']))
+                            <!-- Take Over Button for Support Agents -->
+                            <div class="pt-3 border-t border-apple-gray-200">
+                                <form action="{{ route('complaints.assign', $complaint) }}" method="POST"
+                                      onsubmit="return confirm('Are you sure you want to take over this ticket? The current assignee will be notified.');">
+                                    @csrf
+                                    <input type="hidden" name="assigned_to" value="{{ Auth::id() }}">
+                                    <button type="submit"
+                                            class="w-full inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white font-medium rounded-apple hover:bg-indigo-700 transition-all duration-200">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                        Take Over Ticket
+                                    </button>
+                                </form>
+                                <p class="text-xs text-apple-gray-500 mt-2 text-center">
+                                    Take ownership to assist this client
+                                </p>
+                            </div>
+                        @endif
+
+                        @if(in_array(Auth::user()->role, ['super_admin', 'manager']))
+                            <!-- Reassign Section for Admins/Managers -->
+                            <div class="pt-3 border-t border-apple-gray-200" x-data="{ showAssign: false }">
+                                <button @click="showAssign = !showAssign"
+                                        type="button"
+                                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-medium rounded-apple hover:bg-apple-gray-200 transition-all duration-200">
+                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                                    </svg>
+                                    <span x-text="showAssign ? 'Cancel' : 'Reassign Ticket'"></span>
+                                </button>
+
+                                <div x-show="showAssign"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 -translate-y-2"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     class="mt-3"
+                                     style="display: none;">
+                                    <form action="{{ route('complaints.assign', $complaint) }}" method="POST">
+                                        @csrf
+                                        <label for="assigned_to" class="block text-xs font-medium text-apple-gray-700 mb-1">
+                                            Assign To
+                                        </label>
+                                        <select name="assigned_to" id="assigned_to" required
+                                                class="block w-full px-3 py-2 text-sm bg-white border border-apple-gray-300 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-transparent">
+                                            <option value="">Select Agent...</option>
+                                            @foreach(\App\Models\User::whereIn('role', ['support_agent', 'manager', 'super_admin'])->orderBy('name')->get() as $agent)
+                                                <option value="{{ $agent->id }}" {{ $complaint->assigned_to == $agent->id ? 'selected' : '' }}>
+                                                    {{ $agent->name }} ({{ ucwords(str_replace('_', ' ', $agent->role)) }})
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <button type="submit"
+                                                class="w-full mt-2 px-4 py-2 bg-apple-blue text-white text-sm font-medium rounded-apple hover:bg-blue-600 transition-all duration-200">
+                                            Assign Ticket
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
 

@@ -4,8 +4,11 @@ namespace App\Services;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Models\Complaint;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+
+use App\Http\Controllers\DepartmentController;
 
 class NotificationService
 {
@@ -57,6 +60,116 @@ class NotificationService
             });
         } catch (\Exception $e) {
             Log::error('Failed to send ticket assignment email: ' . $e->getMessage());
+        }
+
+        // Send WhatsApp notification to customer via Twilio
+        self::sendWhatsAppTicketCreated($complaint);
+    }
+
+    /**
+     * Send WhatsApp notification when ticket is created (via Twilio)
+     */
+    public static function sendWhatsAppTicketCreated(Complaint $complaint)
+    {
+        if (!config('twilio.enabled') || !config('twilio.notifications.send_on_create', true)) {
+            Log::info('[Twilio] Disabled or send_on_create is false');
+            return;
+        }
+
+        try {
+            $twilioService = app(TwilioWhatsAppService::class);
+
+            if (!$twilioService->isConfigured()) {
+                Log::info('[Twilio] Service not configured, skipping notification');
+                return;
+            }
+
+            $result = $twilioService->sendTicketCreatedNotification(
+                $complaint->phone_number,
+                $complaint->full_name,
+                $complaint->ticket_number,
+                $complaint->department->name ?? 'N/A',
+                ucfirst($complaint->priority)
+            );
+
+            if ($result['success']) {
+                Log::info('[Twilio] Ticket created notification sent', [
+                    'ticket_number' => $complaint->ticket_number,
+                    'phone' => $complaint->phone_number,
+                    'message_sid' => $result['message_sid'] ?? null,
+                ]);
+            } else {
+                Log::warning('[Twilio] Failed to send ticket created notification', [
+                    'ticket_number' => $complaint->ticket_number,
+                    'error' => $result['error'] ?? 'Unknown error',
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('[Twilio] Error sending ticket created notification: ' . $e->getMessage(), [
+                'ticket_number' => $complaint->ticket_number ?? 'unknown',
+            ]);
+        }
+    }
+
+    /**
+     * Send WhatsApp notification when ticket status changes (via Twilio)
+     */
+    public static function sendWhatsAppStatusUpdate(Complaint $complaint, string $oldStatus, string $newStatus)
+    {
+        if (!config('twilio.enabled') || !config('twilio.notifications.send_on_status_change', true)) {
+            Log::info('[Twilio] Disabled or send_on_status_change is false');
+            return;
+        }
+
+        try {
+            $twilioService = app(TwilioWhatsAppService::class);
+
+            if (!$twilioService->isConfigured()) {
+                Log::info('[Twilio] Service not configured, skipping status update notification');
+                return;
+            }
+
+            // Check if resolved
+            if ($newStatus === 'resolved' && config('twilio.notifications.send_on_resolved', true)) {
+                $result = $twilioService->sendTicketResolvedNotification(
+                    $complaint->phone_number,
+                    $complaint->full_name,
+                    $complaint->ticket_number
+                );
+            } elseif ($newStatus === 'partial_closed') {
+                // Skip notification for partial closure - internal status only
+                Log::info('[Twilio] Skipping notification for partial_closed status (internal only)', [
+                    'ticket_number' => $complaint->ticket_number,
+                ]);
+                return;
+            } else {
+                $result = $twilioService->sendTicketUpdatedNotification(
+                    $complaint->phone_number,
+                    $complaint->full_name,
+                    $complaint->ticket_number,
+                    ucwords(str_replace('_', ' ', $oldStatus)),
+                    ucwords(str_replace('_', ' ', $newStatus))
+                );
+            }
+
+            if ($result['success']) {
+                Log::info('[Twilio] Status update notification sent', [
+                    'ticket_number' => $complaint->ticket_number,
+                    'phone' => $complaint->phone_number,
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'message_sid' => $result['message_sid'] ?? null,
+                ]);
+            } else {
+                Log::warning('[Twilio] Failed to send status update notification', [
+                    'ticket_number' => $complaint->ticket_number,
+                    'error' => $result['error'] ?? 'Unknown error',
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('[Twilio] Error sending status update notification: ' . $e->getMessage(), [
+                'ticket_number' => $complaint->ticket_number ?? 'unknown',
+            ]);
         }
     }
 

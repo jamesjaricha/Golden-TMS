@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Branch;
+use App\Models\Department;
 use App\Services\ActivityLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -26,7 +28,9 @@ class UserController extends Controller
     public function create()
     {
         $roles = ['super_admin', 'manager', 'support_agent', 'user'];
-        return view('users.create', compact('roles'));
+        $branches = Branch::orderBy('name')->get();
+        $departments = Department::active()->orderBy('name')->get();
+        return view('users.create', compact('roles', 'branches', 'departments'));
     }
 
     /**
@@ -39,6 +43,9 @@ class UserController extends Controller
             'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/'],
             'role' => ['required', 'in:super_admin,manager,support_agent,user'],
+            'branch_ids' => ['required', 'array', 'min:1'],
+            'branch_ids.*' => ['exists:branches,id'],
+            'department_id' => ['nullable', 'exists:departments,id'],
         ], [
             'password.regex' => 'Password must contain at least one uppercase letter, one lowercase letter, and one number.',
         ]);
@@ -49,7 +56,12 @@ class UserController extends Controller
             $validated['password'] = Hash::make($validated['password']);
             $validated['email_verified_at'] = now();
 
-            $user = User::create($validated);
+            $user = User::create(collect($validated)->except('branch_ids')->toArray());
+
+            // Sync branches
+            if ($request->has('branch_ids')) {
+                $user->branches()->sync($request->branch_ids);
+            }
 
             // Log activity
             ActivityLogService::logUserCreated($user);
@@ -78,7 +90,9 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $roles = ['super_admin', 'manager', 'support_agent', 'user'];
-        return view('users.edit', compact('user', 'roles'));
+        $branches = Branch::orderBy('name')->get();
+        $departments = Department::active()->orderBy('name')->get();
+        return view('users.edit', compact('user', 'roles', 'branches', 'departments'));
     }
 
     /**
@@ -91,6 +105,9 @@ class UserController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'email:rfc,dns', 'max:255', Rule::unique('users')->ignore($user->id)],
                 'role' => ['required', 'in:super_admin,manager,support_agent,user'],
+                'branch_ids' => ['required', 'array', 'min:1'],
+                'branch_ids.*' => ['exists:branches,id'],
+                'department_id' => ['nullable', 'exists:departments,id'],
             ]);
 
             // Sanitize name
@@ -105,8 +122,11 @@ class UserController extends Controller
                 $validated['password'] = Hash::make($request->password);
             }
 
-            $changes = array_diff_assoc($validated, $user->only(array_keys($validated)));
-            $user->update($validated);
+            $changes = array_diff_assoc(collect($validated)->except('branch_ids')->toArray(), $user->only(array_keys(collect($validated)->except('branch_ids')->toArray())));
+            $user->update(collect($validated)->except('branch_ids')->toArray());
+
+            // Sync branches
+            $user->branches()->sync($request->branch_ids);
 
             // Log activity
             ActivityLogService::logUserUpdated($user, $changes);
@@ -144,7 +164,7 @@ class UserController extends Controller
             $user->delete();
 
             return redirect()->route('users.index')
-                ->with('success', '✅ User "' . $userName . '" deleted successfully.');
+                ->with('success', '✅ User "' . $userName . '" deactivated successfully.');
         } catch (\Exception $e) {
             Log::error('Error deleting user: ' . $e->getMessage());
             return redirect()->back()
