@@ -68,7 +68,7 @@ class NotificationService
 
     /**
      * Send WhatsApp notification when ticket is created (via Twilio)
-     * Uses the in_progress template since that's what's approved in Twilio
+     * Uses the ticket_created template to notify client their ticket was received
      */
     public static function sendWhatsAppTicketCreated(Complaint $complaint)
     {

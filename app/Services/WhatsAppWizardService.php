@@ -418,10 +418,9 @@ class WhatsAppWizardService
                 'department_id' => $data['department_id'],
                 'complaint_text' => $data['issue_description'],
                 'priority' => $data['priority'],
-                'status' => 'in_progress',  // Use in_progress so Twilio template notification is sent
+                'status' => 'pending',  // New/Open status - uses ticket_created template
                 'source' => 'whatsapp',
                 'captured_by' => $agent?->id ?? $conversation->agent_id,
-                'assigned_to' => $agent?->id ?? $conversation->agent_id,  // Auto-assign to capturing agent
             ]);
 
             $conversation->complete($complaint->id);
@@ -616,8 +615,8 @@ class WhatsAppWizardService
             "🎫 *Ticket #:* {$complaint->ticket_number}\n" .
             "👤 *Client:* {$complaint->full_name}\n" .
             "{$emoji} *Priority:* " . ucfirst($complaint->priority) . "\n" .
-            "📊 *Status:* In Progress\n\n" .
-            "The ticket has been logged and assigned.\n" .
+            "📊 *Status:* Open (Pending)\n\n" .
+            "The ticket has been logged successfully.\n" .
             "Client will receive a WhatsApp notification.\n\n" .
             "━━━━━━━━━━━━━━━━━\n" .
             "Type *TICKET* to create another ticket.";
