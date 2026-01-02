@@ -170,7 +170,7 @@ class WhatsAppWizardService
      */
     protected function handleBranch(WhatsAppConversation $conversation, string $input): string
     {
-        $branches = Branch::where('is_active', true)->orderBy('name')->get();
+        $branches = Branch::orderBy('name')->get();
 
         // Check if input is a number (selection)
         if (is_numeric($input)) {
@@ -384,7 +384,7 @@ class WhatsAppWizardService
      */
     protected function getBranchList(): string
     {
-        $branches = Branch::where('is_active', true)->orderBy('name')->get();
+        $branches = Branch::orderBy('name')->get();
 
         if ($branches->isEmpty()) {
             return "_No branches configured_";
