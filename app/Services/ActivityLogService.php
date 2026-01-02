@@ -9,11 +9,25 @@ class ActivityLogService
 {
     /**
      * Log an activity
+     *
+     * @param string $action The action being logged
+     * @param string $description Human-readable description
+     * @param mixed $model The related model (optional)
+     * @param array $properties Additional properties (optional)
+     * @param int|null $userId Override user_id (for webhook/API contexts)
      */
-    public static function log(string $action, string $description, $model = null, array $properties = []): ActivityLog
+    public static function log(string $action, string $description, $model = null, array $properties = [], ?int $userId = null): ActivityLog
     {
+        // Use provided userId, fall back to Auth::id(), then to captured_by if model has it
+        $resolvedUserId = $userId ?? Auth::id();
+
+        // If still null and model has captured_by, use that
+        if ($resolvedUserId === null && $model && isset($model->captured_by)) {
+            $resolvedUserId = $model->captured_by;
+        }
+
         return ActivityLog::create([
-            'user_id' => Auth::id(),
+            'user_id' => $resolvedUserId,
             'action' => $action,
             'model_type' => $model ? get_class($model) : null,
             'model_id' => $model ? $model->id : null,

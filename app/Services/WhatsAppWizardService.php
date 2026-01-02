@@ -322,12 +322,14 @@ class WhatsAppWizardService
 
             $conversation->complete($complaint->id);
 
-            // Log activity
+            // Log activity - pass the agent_id explicitly since we're in webhook context (no Auth::id())
+            $agentId = $agent?->id ?? $conversation->agent_id;
             ActivityLogService::log(
                 'ticket_created',
                 "Ticket {$complaint->ticket_number} created via WhatsApp wizard",
                 $complaint,
-                ['source' => 'whatsapp_wizard', 'agent_id' => $agent?->id]
+                ['source' => 'whatsapp_wizard', 'agent_id' => $agentId],
+                $agentId  // Pass as 5th parameter to override Auth::id()
             );
 
             return $this->getSuccessMessage($complaint);
