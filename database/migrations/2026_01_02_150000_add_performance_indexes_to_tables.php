@@ -35,26 +35,31 @@ return new class extends Migration
                 DB::statement('CREATE INDEX IF NOT EXISTS whatsapp_messages_from_number_index ON whatsapp_messages (from_number)');
             }
         } else {
-            // For MySQL/PostgreSQL, use standard Laravel schema with error handling
-            Schema::table('complaints', function (Blueprint $table) {
-                $table->index('status', 'complaints_status_index');
-                $table->index('priority', 'complaints_priority_index');
-                $table->index('created_at', 'complaints_created_at_index');
-                $table->index(['status', 'created_at'], 'complaints_status_created_at_index');
-                $table->index(['assigned_to', 'status'], 'complaints_assigned_to_status_index');
-                $table->index(['captured_by', 'created_at'], 'complaints_captured_by_created_at_index');
-            });
+            // For MySQL/MariaDB, use raw SQL to safely create indexes only if they don't exist
+            $this->createIndexIfNotExists('complaints', 'complaints_status_index', 'status');
+            $this->createIndexIfNotExists('complaints', 'complaints_priority_index', 'priority');
+            $this->createIndexIfNotExists('complaints', 'complaints_created_at_index', 'created_at');
+            $this->createIndexIfNotExists('complaints', 'complaints_status_created_at_index', 'status, created_at');
+            $this->createIndexIfNotExists('complaints', 'complaints_assigned_to_status_index', 'assigned_to, status');
+            $this->createIndexIfNotExists('complaints', 'complaints_captured_by_created_at_index', 'captured_by, created_at');
 
-            Schema::table('notifications', function (Blueprint $table) {
-                $table->index(['user_id', 'read'], 'notifications_user_read_index');
-            });
+            $this->createIndexIfNotExists('notifications', 'notifications_user_read_index', 'user_id, `read`');
 
             if (Schema::hasTable('whatsapp_messages')) {
-                Schema::table('whatsapp_messages', function (Blueprint $table) {
-                    $table->index('status', 'whatsapp_messages_status_index');
-                    $table->index('from_number', 'whatsapp_messages_from_number_index');
-                });
+                $this->createIndexIfNotExists('whatsapp_messages', 'whatsapp_messages_status_index', 'status');
+                $this->createIndexIfNotExists('whatsapp_messages', 'whatsapp_messages_from_number_index', 'from_number');
             }
+        }
+    }
+
+    /**
+     * Helper to create index if it doesn't exist (MySQL/MariaDB)
+     */
+    private function createIndexIfNotExists(string $table, string $indexName, string $columns): void
+    {
+        $indexes = DB::select("SHOW INDEX FROM `{$table}` WHERE Key_name = ?", [$indexName]);
+        if (empty($indexes)) {
+            DB::statement("CREATE INDEX `{$indexName}` ON `{$table}` ({$columns})");
         }
     }
 
