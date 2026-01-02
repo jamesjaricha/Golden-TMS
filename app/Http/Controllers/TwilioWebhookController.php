@@ -95,6 +95,13 @@ class TwilioWebhookController extends Controller
                 return response('Missing required fields', 400);
             }
 
+            // Ignore outgoing messages (from our Twilio number)
+            $twilioNumber = config('twilio.whatsapp_from', '');
+            if (str_contains($from, ltrim($twilioNumber, '+'))) {
+                Log::info('[Twilio Webhook] Ignoring outgoing message');
+                return $this->xmlResponse();
+            }
+
             // Check for duplicate
             if (WhatsAppMessage::where('message_sid', $messageSid)->exists()) {
                 return response('OK', 200);
