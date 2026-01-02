@@ -202,10 +202,15 @@ class TwilioWhatsAppService
         ]);
 
         try {
-            $response = Http::withBasicAuth($this->accountSid, $this->authToken)
-                ->withOptions([
-                    'verify' => 'C:/laragon/etc/ssl/cacert.pem',
-                ])
+            $httpClient = Http::withBasicAuth($this->accountSid, $this->authToken);
+
+            // Only set custom SSL path if on Windows/Laragon
+            $customCertPath = 'C:/laragon/etc/ssl/cacert.pem';
+            if (file_exists($customCertPath)) {
+                $httpClient = $httpClient->withOptions(['verify' => $customCertPath]);
+            }
+
+            $response = $httpClient
                 ->asForm()
                 ->post($url, $payload);
 
