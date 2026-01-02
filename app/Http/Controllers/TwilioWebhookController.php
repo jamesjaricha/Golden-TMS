@@ -124,8 +124,9 @@ class TwilioWebhookController extends Controller
             // Check if there's an active wizard conversation for this number
             $wizardService = app(WhatsAppWizardService::class);
             $activeConversation = WhatsAppConversation::where('phone_number', $phoneNumber)
-                ->where('status', 'active')
-                ->where('expires_at', '>', now())
+                ->whereNotNull('started_at')
+                ->whereNull('completed_at')
+                ->where('last_activity_at', '>', now()->subMinutes(30)) // 30 min timeout
                 ->first();
 
             // If agent with active conversation, or starting wizard
@@ -177,13 +178,21 @@ class TwilioWebhookController extends Controller
     protected function handleWizardFlow(WhatsAppWizardService $wizardService, string $phoneNumber, string $body, User $agent, WhatsAppMessage $message): Response
     {
         try {
-            $result = $wizardService->handleIncomingMessage($phoneNumber, $body, $agent);
+            // Process the message through the wizard
+            $response = $wizardService->processMessage($phoneNumber, $body, $agent);
 
-            // Update message status if ticket was created
-            if (isset($result['ticket'])) {
+            // Send the response back via WhatsApp
+            $twilioService = app(\App\Services\TwilioWhatsAppService::class);
+            if ($twilioService->isConfigured()) {
+                $twilioService->sendMessage($phoneNumber, $response);
+            }
+
+            // Check if a ticket was created by looking at the conversation
+            $conversation = WhatsAppConversation::where('phone_number', $phoneNumber)->first();
+            if ($conversation && $conversation->created_ticket_id) {
                 $message->update([
                     'status' => 'converted',
-                    'complaint_id' => $result['ticket']->id,
+                    'complaint_id' => $conversation->created_ticket_id,
                 ]);
             }
 
