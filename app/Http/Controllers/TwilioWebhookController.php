@@ -18,12 +18,18 @@ class TwilioWebhookController extends Controller
 {
     /**
      * Validate Twilio webhook signature for security
-     * Returns true if validation passes or is disabled in development
+     * Returns true if validation passes or is disabled
      */
     protected function validateTwilioSignature(Request $request): bool
     {
-        // Skip validation in local/testing environments if explicitly disabled
-        if (app()->environment('local', 'testing') && !config('twilio.validate_webhook_signature', false)) {
+        // Skip validation if explicitly disabled in config
+        if (!config('twilio.validate_webhook_signature', true)) {
+            Log::info('[Twilio Webhook] Signature validation disabled by config');
+            return true;
+        }
+
+        // Also skip in local/testing environments
+        if (app()->environment('local', 'testing')) {
             Log::info('[Twilio Webhook] Signature validation skipped in development');
             return true;
         }
