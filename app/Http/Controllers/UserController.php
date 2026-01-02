@@ -108,10 +108,22 @@ class UserController extends Controller
                 'branch_ids' => ['required', 'array', 'min:1'],
                 'branch_ids.*' => ['exists:branches,id'],
                 'department_id' => ['nullable', 'exists:departments,id'],
+                'whatsapp_number' => ['nullable', 'string', 'max:20', 'regex:/^\+?[0-9\s\-]+$/'],
+                'whatsapp_notifications_enabled' => ['nullable'],
+            ], [
+                'whatsapp_number.regex' => 'Please enter a valid phone number with country code (e.g., +263771234567)',
             ]);
 
             // Sanitize name
             $validated['name'] = strip_tags($validated['name']);
+
+            // Clean up WhatsApp number
+            if (!empty($validated['whatsapp_number'])) {
+                $validated['whatsapp_number'] = preg_replace('/[\s\-]/', '', $validated['whatsapp_number']);
+            }
+
+            // Handle checkbox
+            $validated['whatsapp_notifications_enabled'] = $request->has('whatsapp_notifications_enabled');
 
             if ($request->filled('password')) {
                 $request->validate([

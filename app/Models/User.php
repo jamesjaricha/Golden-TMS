@@ -21,11 +21,57 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'slug',
         'email',
         'password',
         'role',
         'department_id',
+        'whatsapp_number',
+        'whatsapp_notifications_enabled',
     ];
+
+    /**
+     * Get the route key for the model.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            $user->slug = $user->generateUniqueSlug($user->name);
+        });
+
+        static::updating(function ($user) {
+            if ($user->isDirty('name')) {
+                $user->slug = $user->generateUniqueSlug($user->name);
+            }
+        });
+    }
+
+    /**
+     * Generate a unique slug from the name.
+     */
+    public function generateUniqueSlug(string $name): string
+    {
+        $baseSlug = \Illuminate\Support\Str::slug($name);
+        $slug = $baseSlug;
+        $counter = 1;
+
+        while (static::withTrashed()->where('slug', $slug)->where('id', '!=', $this->id ?? 0)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+
+        return $slug;
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -47,7 +93,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'whatsapp_notifications_enabled' => 'boolean',
         ];
+    }
+
+    /**
+     * Check if user has WhatsApp configured and notifications enabled
+     */
+    public function canReceiveWhatsApp(): bool
+    {
+        return !empty($this->whatsapp_number) && $this->whatsapp_notifications_enabled;
     }
 
     /**

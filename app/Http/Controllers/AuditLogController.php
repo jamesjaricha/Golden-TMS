@@ -52,7 +52,8 @@ class AuditLogController extends Controller
 
             // Search in description
             if ($request->filled('search')) {
-                $search = $request->search;
+                // Sanitise special LIKE characters to prevent query manipulation
+                $search = str_replace(['%', '_'], ['\%', '\_'], $request->search);
                 $query->where(function ($q) use ($search) {
                     $q->where('description', 'like', "%{$search}%")
                       ->orWhere('auditable_identifier', 'like', "%{$search}%")
@@ -123,14 +124,15 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $logs = $query->get();
+        // Get count for logging before streaming
+        $count = (clone $query)->count();
 
         // Log this export
         \App\Services\AuditLogService::logExport(
             'audit_logs',
             'CSV',
             $request->only(['category', 'action', 'user_id', 'date_from', 'date_to']),
-            $logs->count()
+            $count
         );
 
         $filename = 'audit_logs_' . now()->format('Y-m-d_His') . '.csv';
@@ -140,7 +142,8 @@ class AuditLogController extends Controller
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ];
 
-        $callback = function () use ($logs) {
+        // Use cursor for memory-efficient streaming of large datasets
+        $callback = function () use ($query) {
             $file = fopen('php://output', 'w');
 
             // Header row
@@ -157,7 +160,8 @@ class AuditLogController extends Controller
                 'Status',
             ]);
 
-            foreach ($logs as $log) {
+            // Use cursor() for memory efficiency with large datasets
+            foreach ($query->cursor() as $log) {
                 fputcsv($file, [
                     $log->created_at->format('Y-m-d H:i:s'),
                     $log->user_name ?? 'System',
@@ -167,7 +171,7 @@ class AuditLogController extends Controller
                     $log->description,
                     $log->auditable_identifier ?? '-',
                     $log->ip_address ?? '-',
-                    $log->device_type . '/' . $log->browser,
+                    ($log->device_type ?? '-') . '/' . ($log->browser ?? '-'),
                     $log->status,
                 ]);
             }

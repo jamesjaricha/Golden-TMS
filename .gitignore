@@ -28,3 +28,27 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs (keep directory structure)
+storage/logs/*.log
+!storage/logs/.gitkeep
+
+# Debug & Testing
+.phpunit.cache/
+coverage/
+
+# Database (for SQLite local dev)
+*.sqlite
+*.sqlite-journal
+
+# Deployment script output
+deploy.log

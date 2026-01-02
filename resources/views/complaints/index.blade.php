@@ -8,7 +8,8 @@
                 <p class="text-sm text-apple-gray-500 mt-1">Manage and track all customer complaints</p>
             </div>
             <div class="flex gap-2">
-                <!-- Export Dropdown -->
+                <!-- Export Dropdown - Manager & Super Admin only -->
+                @if(Auth::user()->isAdmin())
                 <div x-data="{ open: false }" class="relative">
                     <button @click="open = !open" @click.away="open = false"
                            class="inline-flex items-center px-4 py-2 bg-apple-gray-100 text-apple-gray-700 font-semibold rounded-apple hover:bg-apple-gray-200 focus:outline-none focus:ring-2 focus:ring-apple-gray-400 transition-all duration-200">
@@ -65,6 +66,7 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- New Complaint Button -->
                 <a href="{{ route('complaints.create') }}"

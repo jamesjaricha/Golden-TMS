@@ -14,10 +14,17 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\TwilioSettingsController;
+use App\Http\Controllers\TwilioWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
+});
+
+// Twilio Webhook Routes (no authentication - called by Twilio)
+Route::prefix('webhook/twilio')->name('webhook.twilio.')->group(function () {
+    Route::post('/incoming', [TwilioWebhookController::class, 'handleIncoming'])->name('incoming');
+    Route::post('/status', [TwilioWebhookController::class, 'handleStatus'])->name('status');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -44,24 +51,37 @@ Route::middleware('auth')->group(function () {
     // Note: Ticket deletion has been disabled for audit and compliance purposes
     // All tickets are retained permanently and can only be closed, not deleted
 
-    // Export & Reporting Routes
-    Route::prefix('complaints')->name('complaints.')->group(function () {
-        Route::get('export/excel', [ComplaintExportController::class, 'exportExcel'])->name('export.excel');
-        Route::get('export/pdf', [ComplaintExportController::class, 'exportPdf'])->name('export.pdf');
-        Route::get('{complaint}/print', [ComplaintExportController::class, 'print'])->name('print');
-        Route::get('{complaint}/export-pdf', [ComplaintExportController::class, 'exportTicketPdf'])->name('export-ticket-pdf');
-    });
+    // Export & Reporting Routes - Manager & Super Admin only
+    Route::middleware(['role:super_admin,manager'])->group(function () {
+        Route::prefix('complaints')->name('complaints.')->group(function () {
+            Route::get('export/excel', [ComplaintExportController::class, 'exportExcel'])->name('export.excel');
+            Route::get('export/pdf', [ComplaintExportController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('{complaint}/print', [ComplaintExportController::class, 'print'])->name('print');
+            Route::get('{complaint}/export-pdf', [ComplaintExportController::class, 'exportTicketPdf'])->name('export-ticket-pdf');
+        });
 
-    Route::prefix('reports')->name('reports.')->group(function () {
-        Route::get('wizard', [ReportController::class, 'index'])->name('wizard');
-        Route::post('generate', [ReportController::class, 'generate'])->name('generate');
-        Route::get('monthly', [ComplaintExportController::class, 'monthlyReport'])->name('monthly');
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('wizard', [ReportController::class, 'index'])->name('wizard');
+            Route::post('generate', [ReportController::class, 'generate'])->name('generate');
+            Route::get('monthly', [ComplaintExportController::class, 'monthlyReport'])->name('monthly');
+        });
     });
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+
+    // Ticket Reminders/Tasks
+    Route::prefix('tickets/{complaint}/reminders')->name('reminders.')->group(function () {
+        Route::post('/', [\App\Http\Controllers\TicketReminderController::class, 'store'])->name('store');
+        Route::put('/{reminder}', [\App\Http\Controllers\TicketReminderController::class, 'update'])->name('update');
+        Route::post('/{reminder}/complete', [\App\Http\Controllers\TicketReminderController::class, 'complete'])->name('complete');
+        Route::post('/{reminder}/cancel', [\App\Http\Controllers\TicketReminderController::class, 'cancel'])->name('cancel');
+        Route::post('/{reminder}/snooze', [\App\Http\Controllers\TicketReminderController::class, 'snooze'])->name('snooze');
+        Route::delete('/{reminder}', [\App\Http\Controllers\TicketReminderController::class, 'destroy'])->name('destroy');
+    });
+    Route::get('/my-reminders', [\App\Http\Controllers\TicketReminderController::class, 'userReminders'])->name('reminders.user');
 
     // Analytics Dashboard - Manager & Super Admin only
     Route::middleware(['role:super_admin,manager'])->group(function () {

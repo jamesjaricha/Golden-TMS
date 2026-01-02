@@ -101,6 +101,9 @@ class TwilioWhatsAppService
 
         try {
             $response = Http::withBasicAuth($this->accountSid, $this->authToken)
+                ->withOptions([
+                    'verify' => 'C:/laragon/etc/ssl/cacert.pem',
+                ])
                 ->asForm()
                 ->post($url, [
                     'To' => $toFormatted,
@@ -195,6 +198,9 @@ class TwilioWhatsAppService
 
         try {
             $response = Http::withBasicAuth($this->accountSid, $this->authToken)
+                ->withOptions([
+                    'verify' => 'C:/laragon/etc/ssl/cacert.pem',
+                ])
                 ->asForm()
                 ->post($url, $payload);
 
@@ -247,6 +253,20 @@ class TwilioWhatsAppService
      */
     public function sendTicketCreatedNotification(string $to, string $name, string $ticketNumber, string $department, string $priority): array
     {
+        // Check if we have an approved template
+        $templateSid = config('twilio.templates.ticket_created');
+
+        if (!empty($templateSid)) {
+            // Use approved template
+            return $this->sendTemplateMessage($to, $templateSid, [
+                '1' => $name,
+                '2' => $ticketNumber,
+                '3' => $department,
+                '4' => $priority,
+            ]);
+        }
+
+        // Fall back to freeform message (only works within 24-hour window)
         $message = "Hi {$name},\n\n";
         $message .= "Your support ticket has been created successfully!\n\n";
         $message .= "🎫 Ticket Number: {$ticketNumber}\n";
@@ -263,6 +283,20 @@ class TwilioWhatsAppService
      */
     public function sendTicketUpdatedNotification(string $to, string $name, string $ticketNumber, string $oldStatus, string $newStatus): array
     {
+        // Check if we have an approved template
+        $templateSid = config('twilio.templates.ticket_updated');
+
+        if (!empty($templateSid)) {
+            // Use approved template
+            return $this->sendTemplateMessage($to, $templateSid, [
+                '1' => $name,
+                '2' => $ticketNumber,
+                '3' => $oldStatus,
+                '4' => $newStatus,
+            ]);
+        }
+
+        // Fall back to freeform message (only works within 24-hour window)
         $message = "Hi {$name},\n\n";
         $message .= "Your ticket has been updated.\n\n";
         $message .= "🎫 Ticket Number: {$ticketNumber}\n";
@@ -277,6 +311,18 @@ class TwilioWhatsAppService
      */
     public function sendTicketResolvedNotification(string $to, string $name, string $ticketNumber): array
     {
+        // Check if we have an approved template
+        $templateSid = config('twilio.templates.ticket_resolved');
+
+        if (!empty($templateSid)) {
+            // Use approved template
+            return $this->sendTemplateMessage($to, $templateSid, [
+                '1' => $name,
+                '2' => $ticketNumber,
+            ]);
+        }
+
+        // Fall back to freeform message (only works within 24-hour window)
         $message = "Hi {$name},\n\n";
         $message .= "Great news! Your ticket has been resolved. ✅\n\n";
         $message .= "🎫 Ticket Number: {$ticketNumber}\n\n";
@@ -299,6 +345,91 @@ class TwilioWhatsAppService
         $message .= "The {$completedDepartment} department has completed their work. We are now waiting for the {$pendingDepartment} department to complete their part.\n\n";
         $message .= "We'll notify you once all work is done.\n\n";
         $message .= "Thank you,\nGolden Knot Holdings";
+
+        return $this->sendMessage($to, $message);
+    }
+
+    /**
+     * Send task assigned notification to agent (immediate notification when task is created)
+     */
+    public function sendTaskAssignedNotification(string $to, string $agentName, string $taskDescription, string $ticketNumber, string $priority, string $dueDate, string $assignedBy): array
+    {
+        // Check if we have an approved template
+        $templateSid = config('twilio.templates.task_assigned');
+
+        if (!empty($templateSid)) {
+            // Use approved template
+            return $this->sendTemplateMessage($to, $templateSid, [
+                '1' => $agentName,
+                '2' => $taskDescription,
+                '3' => $ticketNumber,
+                '4' => ucfirst($priority),
+                '5' => $dueDate,
+                '6' => $assignedBy,
+            ]);
+        }
+
+        // Fall back to freeform message (only works within 24-hour window)
+        $priorityEmoji = match($priority) {
+            'high' => '🔥',
+            'medium' => '⏰',
+            default => '📋',
+        };
+
+        $message = "Hi {$agentName},\n\n";
+        $message .= "📋 New Task Assigned\n\n";
+        $message .= "📝 Task: {$taskDescription}\n";
+        $message .= "🎫 Ticket: {$ticketNumber}\n";
+        $message .= "{$priorityEmoji} Priority: " . ucfirst($priority) . "\n";
+        $message .= "📅 Due: {$dueDate}\n";
+        $message .= "👤 Assigned by: {$assignedBy}\n\n";
+        $message .= "Please complete this task by the due date.\n\n";
+        $message .= "Golden Knot TMS";
+
+        return $this->sendMessage($to, $message);
+    }
+
+    /**
+     * Send task reminder notification to agent
+     */
+    public function sendTaskReminderNotification(string $to, string $agentName, string $taskDescription, string $ticketNumber, string $priority, bool $isOverdue = false): array
+    {
+        // Check if we have an approved template
+        $templateSid = config('twilio.templates.task_reminder');
+
+        if (!empty($templateSid)) {
+            // Use approved template
+            return $this->sendTemplateMessage($to, $templateSid, [
+                '1' => $agentName,
+                '2' => $taskDescription,
+                '3' => $ticketNumber,
+                '4' => ucfirst($priority),
+                '5' => $isOverdue ? 'OVERDUE' : 'Due Now',
+            ]);
+        }
+
+        // Fall back to freeform message (only works within 24-hour window)
+        $priorityEmoji = match($priority) {
+            'high' => '🔥',
+            'medium' => '⏰',
+            default => '📋',
+        };
+
+        $overdueText = $isOverdue ? ' ⚠️ OVERDUE' : '';
+
+        $message = "Hi {$agentName},\n\n";
+        $message .= "{$priorityEmoji} Task Reminder{$overdueText}\n\n";
+        $message .= "📝 Task: {$taskDescription}\n";
+        $message .= "🎫 Ticket: {$ticketNumber}\n";
+        $message .= "📊 Priority: " . ucfirst($priority) . "\n\n";
+
+        if ($isOverdue) {
+            $message .= "⚠️ This task is overdue. Please complete it as soon as possible.\n\n";
+        } else {
+            $message .= "Please complete this task at your earliest convenience.\n\n";
+        }
+
+        $message .= "Golden Knot TMS";
 
         return $this->sendMessage($to, $message);
     }

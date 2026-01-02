@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Branch;
 use App\Services\ActivityLogService;
+use App\Services\LookupDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -51,6 +52,9 @@ class BranchController extends Controller
             }
 
             $branch = Branch::create($validated);
+
+            // Clear cache as data has changed
+            LookupDataService::clearBranchCache();
 
             // Log activity
             ActivityLogService::log(
@@ -110,6 +114,9 @@ class BranchController extends Controller
             $changes = array_diff_assoc($validated, $branch->only(array_keys($validated)));
             $branch->update($validated);
 
+            // Clear cache as data has changed
+            LookupDataService::clearBranchCache();
+
             // Log activity
             ActivityLogService::log(
                 'branch_updated',
@@ -158,6 +165,9 @@ class BranchController extends Controller
             );
 
             $branch->delete();
+
+            // Clear cache as data has changed
+            LookupDataService::clearBranchCache();
 
             return redirect()->route('branches.index')
                 ->with('success', '✅ Branch "' . $branchName . '" deactivated successfully!');

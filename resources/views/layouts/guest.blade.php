@@ -14,14 +14,10 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-        <style>
-            body {
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-        </style>
+        <!-- Custom Styles -->
+        <link href="{{ asset('css/app-custom.css') }}" rel="stylesheet" />
     </head>
-    <body class="font-sans text-apple-gray-900 antialiased">
+    <body class="font-sans text-apple-gray-900 antialiased font-smooth">
         <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gradient-to-br from-apple-gray-50 to-white">
             <div class="animate-fade-in">
                 <a href="/">

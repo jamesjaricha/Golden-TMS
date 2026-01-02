@@ -76,6 +76,65 @@
             </a>
         </div>
 
+        <!-- My Pending Tasks -->
+        @if($totalPendingTasks > 0)
+        <div class="bg-gradient-to-br from-yellow-50 to-orange-50 border-2 border-yellow-200 rounded-apple-lg shadow-apple p-6 animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-apple-gray-900 flex items-center gap-2">
+                    📋 My Pending Tasks
+                    @if($overdueTasks > 0)
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            {{ $overdueTasks }} overdue
+                        </span>
+                    @endif
+                </h3>
+                <span class="text-sm font-medium text-apple-gray-600">{{ $totalPendingTasks }} total</span>
+            </div>
+
+            <div class="space-y-3">
+                @foreach($myPendingTasks as $task)
+                    <a href="{{ route('complaints.show', $task->complaint->ticket_number) }}"
+                       class="block p-3 bg-white rounded-lg hover:shadow-md transition-shadow border {{ $task->isOverdue() ? 'border-red-300' : 'border-yellow-200' }}">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center flex-wrap gap-2 mb-2">
+                                    @if($task->isOverdue())
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-800">
+                                            ⚠ Overdue
+                                        </span>
+                                    @endif
+                                    @if($task->priority === 'high')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-800">
+                                            🔥 High Priority
+                                        </span>
+                                    @elseif($task->priority === 'medium')
+                                        <span class="inline-flex items-center px-2 py-1 rounded-md text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                            ⏰ Medium Priority
+                                        </span>
+                                    @endif
+                                    <span class="text-xs font-medium text-apple-gray-600">Ticket #{{ $task->complaint->ticket_number }}</span>
+                                </div>
+                                <p class="text-sm font-medium text-apple-gray-900 mb-1">{{ $task->task_description }}</p>
+                                <p class="text-xs text-apple-gray-600">
+                                    <span class="font-medium">⏰ Due:</span> {{ $task->reminder_datetime->format('M j, Y g:i A') }} <span class="text-apple-gray-500">({{ $task->reminder_datetime->diffForHumans() }})</span>
+                                </p>
+                            </div>
+                            <svg class="w-5 h-5 text-apple-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </a>
+                @endforeach
+
+                @if($totalPendingTasks > 5)
+                    <p class="text-center text-xs text-apple-gray-600 pt-2">
+                        + {{ $totalPendingTasks - 5 }} more pending tasks
+                    </p>
+                @endif
+            </div>
+        </div>
+        @endif
+
         <!-- Recent Activity -->
         <div class="bg-white rounded-apple-lg shadow-apple p-6 animate-fade-in">
             <h3 class="text-lg font-semibold text-apple-gray-900 mb-4">Recent Activity</h3>

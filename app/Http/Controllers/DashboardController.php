@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Complaint;
 use App\Models\ActivityLog;
+use App\Models\TicketReminder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -48,12 +49,32 @@ class DashboardController extends Controller
             ->pluck('count', 'status')
             ->toArray();
 
+        // Pending task reminders for current user
+        $myPendingTasks = TicketReminder::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->orderBy('reminder_datetime', 'asc')
+            ->limit(5)
+            ->with(['complaint', 'creator'])
+            ->get();
+
+        $totalPendingTasks = TicketReminder::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
+
+        $overdueTasks = TicketReminder::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->where('reminder_datetime', '<', now())
+            ->count();
+
         return view('dashboard', compact(
             'totalTickets',
             'openTickets',
             'resolvedTickets',
             'recentActivity',
-            'ticketsByStatus'
+            'ticketsByStatus',
+            'myPendingTasks',
+            'totalPendingTasks',
+            'overdueTasks'
         ));
     }
 

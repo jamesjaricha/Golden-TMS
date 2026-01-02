@@ -156,7 +156,14 @@ class ComplaintController extends Controller
         // Support agents, managers, and admins can view all tickets
         // This allows agents to take over tickets when colleagues are unavailable
 
-        $complaint->load(['capturedBy', 'assignedTo', 'comments.user']);
+        $complaint->load([
+            'capturedBy',
+            'assignedTo',
+            'comments.user',
+            'reminders.user',
+            'reminders.creator',
+            'reminders.completedByUser'
+        ]);
 
         // Load activity logs for this ticket with pagination
         $activities = \App\Models\ActivityLog::where('model_type', 'App\\Models\\Complaint')
@@ -214,11 +221,19 @@ class ComplaintController extends Controller
                 'payment_method_id' => ['required', 'exists:payment_methods,id'],
                 'resolution_notes' => ['nullable', 'string', 'max:10000'],
                 'comment' => ['nullable', 'string', 'max:5000'],
-                // Partial closed fields
-                'pending_department' => ['nullable', 'required_if:status,partial_closed', 'in:Billing,Claims,IT,General Support'],
-                'completed_department' => ['nullable', 'in:Billing,Claims,IT,General Support'],
+                // Partial closed fields - only validate when status is partial_closed
+                'pending_department' => ['nullable', 'required_if:status,partial_closed', 'exists:departments,id'],
+                'completed_department' => ['nullable'],
                 'partial_close_notes' => ['nullable', 'string', 'max:5000'],
             ]);
+
+            // If completed_department is provided, validate it exists
+            if (!empty($validated['completed_department'])) {
+                $deptExists = \App\Models\Department::where('id', $validated['completed_department'])->exists();
+                if (!$deptExists) {
+                    $validated['completed_department'] = null;
+                }
+            }
 
             // Sanitize text inputs
             if (!empty($validated['resolution_notes'])) {
@@ -241,7 +256,7 @@ class ComplaintController extends Controller
                 $validated['partial_closed_at'] = now();
                 // Set completed department to current department if not specified
                 if (empty($validated['completed_department'])) {
-                    $validated['completed_department'] = $complaint->department;
+                    $validated['completed_department'] = $complaint->department_id;
                 }
             } elseif ($oldStatus === 'partial_closed' && $validated['status'] !== 'partial_closed') {
                 // If moving from partial_closed to another status, clear partial close fields

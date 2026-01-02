@@ -84,6 +84,7 @@
                     </div>
                 </div>
 
+                @if(Auth::user()->isAdmin())
                 <a href="{{ route('reports.wizard') }}"
                    class="flex items-center px-3 py-2 text-sm font-medium rounded-apple transition-all {{ request()->routeIs('reports.*') || request()->routeIs('complaints.export.*') ? 'bg-apple-blue text-white' : 'text-apple-gray-700 hover:bg-apple-gray-100' }}">
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,6 +92,7 @@
                     </svg>
                     <span x-show="open" x-transition class="ml-3">Reports</span>
                 </a>
+                @endif
 
                 @if(Auth::user()->isAdmin())
                     <a href="{{ route('analytics.index') }}"
@@ -290,6 +292,7 @@
                         </div>
                     </div>
 
+                    @if(Auth::user()->isAdmin())
                     <a href="{{ route('reports.wizard') }}"
                        class="flex items-center px-3 py-2 text-sm font-medium rounded-apple transition-all {{ request()->routeIs('reports.*') || request()->routeIs('complaints.export.*') ? 'bg-apple-blue text-white' : 'text-apple-gray-700 hover:bg-apple-gray-100' }}">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -297,6 +300,7 @@
                         </svg>
                         <span class="ml-3">Reports</span>
                     </a>
+                    @endif
 
                     @if(Auth::user()->isAdmin())
                         <a href="{{ route('analytics.index') }}"

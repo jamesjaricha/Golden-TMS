@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Department;
 use App\Services\ActivityLogService;
+use App\Services\LookupDataService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -49,6 +50,9 @@ class DepartmentController extends Controller
             $validated['is_active'] = $request->has('is_active');
 
             $department = Department::create($validated);
+
+            // Clear cache as data has changed
+            LookupDataService::clearDepartmentCache();
 
             // Log activity
             ActivityLogService::log(
@@ -96,6 +100,9 @@ class DepartmentController extends Controller
 
             $department->update($validated);
 
+            // Clear cache as data has changed
+            LookupDataService::clearDepartmentCache();
+
             // Log activity
             ActivityLogService::log(
                 'department_updated',
@@ -127,6 +134,9 @@ class DepartmentController extends Controller
 
             $name = $department->name;
             $department->delete();
+
+            // Clear cache as data has changed
+            LookupDataService::clearDepartmentCache();
 
             // Log activity
             ActivityLogService::log(

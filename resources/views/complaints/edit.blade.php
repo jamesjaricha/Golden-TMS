@@ -118,15 +118,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Completed Department -->
                         <div>
-                            <label for="completed_department" class="block text-sm font-medium text-orange-900 mb-2">
+                            <label for="completed_department_display" class="block text-sm font-medium text-orange-900 mb-2">
                                 Your Department (Completed)
                             </label>
                             <input type="text"
-                                   id="completed_department"
-                                   name="completed_department"
-                                   value="{{ old('completed_department', $complaint->completed_department ?? auth()->user()->department->name ?? 'N/A') }}"
+                                   id="completed_department_display"
+                                   value="{{ auth()->user()->department->name ?? 'N/A' }}"
                                    readonly
                                    class="block w-full px-4 py-3 bg-gray-100 border border-orange-200 rounded-apple text-gray-700 cursor-not-allowed">
+                            @if(auth()->user()->department_id)
+                                <input type="hidden" name="completed_department" value="{{ auth()->user()->department_id }}">
+                            @endif
                             <p class="mt-1 text-xs text-orange-600">Automatically set from your assigned department</p>
                         </div>
 
@@ -137,12 +139,11 @@
                             </label>
                             <select id="pending_department"
                                     name="pending_department"
-                                    required
                                     class="block w-full px-4 py-3 bg-white border border-orange-200 rounded-apple focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200">
                                 <option value="">-- Select Department --</option>
                                 @foreach($departments as $department)
                                     @if(auth()->user()->department_id != $department->id)
-                                        <option value="{{ $department->name }}" {{ old('pending_department', $complaint->pending_department) === $department->name ? 'selected' : '' }}>
+                                        <option value="{{ $department->id }}" {{ old('pending_department', $complaint->pending_department) == $department->id ? 'selected' : '' }}>
                                             {{ $department->name }}
                                         </option>
                                     @endif
@@ -296,26 +297,4 @@
             </form>
         </div>
     </div>
-
-    <script>
-        // Toggle partial closed section visibility
-        document.addEventListener('DOMContentLoaded', function() {
-            const statusSelect = document.getElementById('status');
-            const partialClosedSection = document.getElementById('partial-closed-section');
-            const pendingDepartmentSelect = document.getElementById('pending_department');
-
-            function togglePartialClosedSection() {
-                if (statusSelect.value === 'partial_closed') {
-                    partialClosedSection.style.display = 'block';
-                    pendingDepartmentSelect.setAttribute('required', 'required');
-                } else {
-                    partialClosedSection.style.display = 'none';
-                    pendingDepartmentSelect.removeAttribute('required');
-                }
-            }
-
-            statusSelect.addEventListener('change', togglePartialClosedSection);
-            togglePartialClosedSection(); // Initial check
-        });
-    </script>
 </x-app-layout>

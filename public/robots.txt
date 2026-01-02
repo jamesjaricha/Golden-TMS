@@ -1,2 +1,17 @@
+# Golden TMS - Robots.txt
+# This is a private business application - discourage crawling
+
 User-agent: *
-Disallow:
+Disallow: /login
+Disallow: /register
+Disallow: /password
+Disallow: /api/
+Disallow: /webhooks/
+Disallow: /admin/
+Disallow: /storage/
+
+# Allow crawlers to see main page
+Allow: /
+
+# Sitemap (uncomment if you add one)
+# Sitemap: https://your-domain.com/sitemap.xml

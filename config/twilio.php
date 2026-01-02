@@ -61,6 +61,8 @@ return [
         'ticket_created' => env('TWILIO_TEMPLATE_TICKET_CREATED', ''),
         'ticket_updated' => env('TWILIO_TEMPLATE_TICKET_UPDATED', ''),
         'ticket_resolved' => env('TWILIO_TEMPLATE_TICKET_RESOLVED', ''),
+        'task_assigned' => env('TWILIO_TEMPLATE_TASK_ASSIGNED', ''),
+        'task_reminder' => env('TWILIO_TEMPLATE_TASK_REMINDER', ''),
     ],
 
     /*
@@ -70,6 +72,18 @@ return [
     */
 
     'logging_enabled' => env('TWILIO_LOGGING_ENABLED', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Security Settings
+    |--------------------------------------------------------------------------
+    |
+    | Webhook signature validation ensures requests are genuinely from Twilio.
+    | Set to true in production for maximum security.
+    |
+    */
+
+    'validate_webhook_signature' => env('TWILIO_VALIDATE_WEBHOOK_SIGNATURE', true),
 
     /*
     |--------------------------------------------------------------------------

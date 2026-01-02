@@ -14,6 +14,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
         ]);
+
+        // Exclude Twilio webhook URLs from CSRF protection
+        $middleware->validateCsrfTokens(except: [
+            'webhook/twilio/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

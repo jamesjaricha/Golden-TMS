@@ -333,35 +333,4 @@
             </div>
         </div>
     </div>
-
-    <script>
-        function reportWizard() {
-            return {
-                step: 1,
-                reportType: 'tickets',
-                format: 'view',
-                filters: {
-                    date_from: '',
-                    date_to: '',
-                    branch_id: '',
-                    assigned_to: '',
-                    status: '',
-                    priority: '',
-                    department: '',
-                    employer_id: '',
-                    payment_method_id: ''
-                },
-                nextStep() {
-                    if (this.step < 3) {
-                        this.step++;
-                    }
-                },
-                previousStep() {
-                    if (this.step > 1) {
-                        this.step--;
-                    }
-                }
-            }
-        }
-    </script>
 </x-app-layout>

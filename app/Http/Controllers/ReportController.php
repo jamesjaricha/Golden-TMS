@@ -110,30 +110,31 @@ class ReportController extends Controller
 
     /**
      * Generate statistics based on report type
+     * PERFORMANCE: Ensure relationships are loaded before grouping to prevent N+1 queries
      */
     private function generateStatistics($complaints, $reportType)
     {
+        // Ensure relationships are loaded to prevent N+1 queries
+        $complaints->loadMissing(['branch', 'assignedTo', 'employer', 'paymentMethod', 'department']);
+
         $stats = [
             'total' => $complaints->count(),
             'by_status' => $complaints->groupBy('status')->map->count(),
             'by_priority' => $complaints->groupBy('priority')->map->count(),
-            'by_department' => $complaints->groupBy('department')->map->count(),
-            'by_branch' => $complaints->groupBy('branch.name')->map->count(),
-            'by_agent' => $complaints->groupBy('assignedTo.name')->map->count(),
-            'by_employer' => $complaints->groupBy('employer.name')->map->count(),
-            'by_payment_method' => $complaints->groupBy('paymentMethod.name')->map->count(),
+            'by_department' => $complaints->groupBy(fn($c) => $c->department?->name ?? 'Unassigned')->map->count(),
+            'by_branch' => $complaints->groupBy(fn($c) => $c->branch?->name ?? 'Unassigned')->map->count(),
+            'by_agent' => $complaints->groupBy(fn($c) => $c->assignedTo?->name ?? 'Unassigned')->map->count(),
+            'by_employer' => $complaints->groupBy(fn($c) => $c->employer?->name ?? 'Unassigned')->map->count(),
+            'by_payment_method' => $complaints->groupBy(fn($c) => $c->paymentMethod?->name ?? 'Unassigned')->map->count(),
         ];
 
-        // Calculate average resolution time
-        $resolvedTickets = $complaints->whereIn('status', ['resolved', 'closed']);
+        // Calculate average resolution time efficiently
+        $resolvedTickets = $complaints->filter(fn($t) => in_array($t->status, ['resolved', 'closed']) && $t->resolved_at);
         if ($resolvedTickets->count() > 0) {
-            $totalResolutionTime = 0;
-            foreach ($resolvedTickets as $ticket) {
-                if ($ticket->updated_at && $ticket->created_at) {
-                    $totalResolutionTime += $ticket->created_at->diffInHours($ticket->updated_at);
-                }
-            }
-            $stats['avg_resolution_hours'] = round($totalResolutionTime / $resolvedTickets->count(), 2);
+            $totalResolutionHours = $resolvedTickets->sum(function ($ticket) {
+                return $ticket->created_at->diffInHours($ticket->resolved_at ?? $ticket->updated_at);
+            });
+            $stats['avg_resolution_hours'] = round($totalResolutionHours / $resolvedTickets->count(), 2);
         } else {
             $stats['avg_resolution_hours'] = 0;
         }

@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\PaymentMethod;
 use App\Services\ActivityLogService;
+use App\Services\LookupDataService;
 use Illuminate\Http\Request;
 
 class PaymentMethodController extends Controller
 {
     public function index()
     {
-        $paymentMethods = PaymentMethod::withCount('complaints')->latest()->get();
+        $paymentMethods = PaymentMethod::withCount('complaints')->latest()->paginate(20);
         return view('payment_methods.index', compact('paymentMethods'));
     }
 
@@ -26,7 +27,13 @@ class PaymentMethodController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Sanitise input to prevent XSS
+        $validated['name'] = strip_tags($validated['name']);
+
         $paymentMethod = PaymentMethod::create($validated);
+
+        // Clear cache as data has changed
+        LookupDataService::clearPaymentMethodCache();
 
         ActivityLogService::log(
             'payment_method_created',
@@ -50,8 +57,14 @@ class PaymentMethodController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Sanitise input to prevent XSS
+        $validated['name'] = strip_tags($validated['name']);
+
         $oldName = $paymentMethod->name;
         $paymentMethod->update($validated);
+
+        // Clear cache as data has changed
+        LookupDataService::clearPaymentMethodCache();
 
         ActivityLogService::log(
             'payment_method_updated',
@@ -71,6 +84,9 @@ class PaymentMethodController extends Controller
 
         $name = $paymentMethod->name;
         $paymentMethod->delete();
+
+        // Clear cache as data has changed
+        LookupDataService::clearPaymentMethodCache();
 
         ActivityLogService::log(
             'payment_method_deactivated',

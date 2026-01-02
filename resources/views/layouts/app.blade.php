@@ -11,17 +11,13 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
+        <!-- Custom CSS -->
+        <link href="{{ asset('css/app-custom.css') }}" rel="stylesheet" />
+
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-        <style>
-            body {
-                -webkit-font-smoothing: antialiased;
-                -moz-osx-font-smoothing: grayscale;
-            }
-        </style>
     </head>
-    <body class="font-sans antialiased bg-apple-gray-50">
+    <body class="font-sans antialiased bg-apple-gray-50 font-smooth">
         <div class="min-h-screen flex">
             @include('layouts.sidebar')
 
@@ -48,21 +44,8 @@
         <!-- Notification Component -->
         <x-notification />
 
-        <script>
-            function markAsRead(notificationId, url) {
-                fetch(`/notifications/${notificationId}/read`, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'Content-Type': 'application/json'
-                    }
-                }).then(() => {
-                    if (url && url !== '#') {
-                        window.location.href = url;
-                    }
-                });
-            }
-        </script>
+        <!-- Custom JS -->
+        <script src="{{ asset('js/app-custom.js') }}"></script>
 
         @stack('scripts')
     </body>

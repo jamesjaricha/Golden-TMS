@@ -4,13 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Employer;
 use App\Services\ActivityLogService;
+use App\Services\LookupDataService;
 use Illuminate\Http\Request;
 
 class EmployerController extends Controller
 {
     public function index()
     {
-        $employers = Employer::withCount('complaints')->latest()->get();
+        $employers = Employer::withCount('complaints')->latest()->paginate(20);
         return view('employers.index', compact('employers'));
     }
 
@@ -26,7 +27,13 @@ class EmployerController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Sanitise input to prevent XSS
+        $validated['name'] = strip_tags($validated['name']);
+
         $employer = Employer::create($validated);
+
+        // Clear cache as data has changed
+        LookupDataService::clearEmployerCache();
 
         ActivityLogService::log(
             'employer_created',
@@ -50,8 +57,14 @@ class EmployerController extends Controller
             'is_active' => 'boolean',
         ]);
 
+        // Sanitise input to prevent XSS
+        $validated['name'] = strip_tags($validated['name']);
+
         $oldName = $employer->name;
         $employer->update($validated);
+
+        // Clear cache as data has changed
+        LookupDataService::clearEmployerCache();
 
         ActivityLogService::log(
             'employer_updated',
@@ -71,6 +84,9 @@ class EmployerController extends Controller
 
         $name = $employer->name;
         $employer->delete();
+
+        // Clear cache as data has changed
+        LookupDataService::clearEmployerCache();
 
         ActivityLogService::log(
             'employer_deactivated',

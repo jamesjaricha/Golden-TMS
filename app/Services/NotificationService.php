@@ -221,4 +221,103 @@ class NotificationService
                 'read_at' => now(),
             ]);
     }
+
+    /**
+     * Notify user about a task reminder
+     */
+    public static function notifyTaskReminder($reminder)
+    {
+        $complaint = $reminder->complaint;
+        $user = $reminder->user;
+
+        // Priority emoji mapping
+        $priorityEmoji = [
+            'low' => '📋',
+            'medium' => '⏰',
+            'high' => '🔥',
+        ];
+
+        $emoji = $priorityEmoji[$reminder->priority] ?? '⏰';
+        $overdueText = $reminder->isOverdue() ? ' (OVERDUE)' : '';
+
+        // Create in-app notification
+        self::create(
+            $user->id,
+            'task_reminder',
+            "{$emoji} Task Reminder{$overdueText}",
+            $reminder->task_description,
+            route('complaints.show', $complaint->ticket_number),
+            [
+                'reminder_id' => $reminder->id,
+                'ticket_id' => $complaint->id,
+                'ticket_number' => $complaint->ticket_number,
+                'priority' => $reminder->priority,
+                'due_at' => $reminder->reminder_datetime->toDateTimeString(),
+                'is_overdue' => $reminder->isOverdue(),
+            ]
+        );
+
+        // Send WhatsApp notification if user has it enabled
+        self::sendWhatsAppTaskReminder($reminder);
+    }
+
+    /**
+     * Send WhatsApp notification for task reminder
+     */
+    public static function sendWhatsAppTaskReminder($reminder)
+    {
+        $user = $reminder->user;
+
+        // Check if user can receive WhatsApp notifications
+        if (!$user->canReceiveWhatsApp()) {
+            Log::info('[Twilio] User has no WhatsApp number or notifications disabled', [
+                'user_id' => $user->id,
+                'reminder_id' => $reminder->id,
+            ]);
+            return;
+        }
+
+        if (!config('twilio.enabled')) {
+            Log::info('[Twilio] Disabled, skipping task reminder WhatsApp');
+            return;
+        }
+
+        try {
+            $twilioService = app(TwilioWhatsAppService::class);
+
+            if (!$twilioService->isConfigured()) {
+                Log::info('[Twilio] Service not configured, skipping task reminder WhatsApp');
+                return;
+            }
+
+            $result = $twilioService->sendTaskReminderNotification(
+                $user->whatsapp_number,
+                $user->name,
+                $reminder->task_description,
+                $reminder->complaint->ticket_number,
+                $reminder->priority,
+                $reminder->isOverdue()
+            );
+
+            if ($result['success']) {
+                Log::info('[Twilio] Task reminder WhatsApp sent', [
+                    'reminder_id' => $reminder->id,
+                    'user_id' => $user->id,
+                    'phone' => $user->whatsapp_number,
+                    'message_sid' => $result['message_sid'] ?? null,
+                ]);
+            } else {
+                Log::warning('[Twilio] Failed to send task reminder WhatsApp', [
+                    'reminder_id' => $reminder->id,
+                    'user_id' => $user->id,
+                    'error' => $result['error'] ?? 'Unknown error',
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('[Twilio] Error sending task reminder WhatsApp: ' . $e->getMessage(), [
+                'reminder_id' => $reminder->id,
+                'user_id' => $user->id,
+            ]);
+        }
+    }
 }

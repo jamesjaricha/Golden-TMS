@@ -97,6 +97,7 @@ class TwilioSettingsController extends Controller
 
     /**
      * Update .env file with new values
+     * Sanitises values to prevent file corruption
      */
     protected function updateEnvFile(array $values): void
     {
@@ -104,6 +105,14 @@ class TwilioSettingsController extends Controller
         $envContent = file_get_contents($envPath);
 
         foreach ($values as $key => $value) {
+            // SECURITY: Sanitise value - remove newlines and escape quotes
+            $value = str_replace(["\r", "\n"], '', $value);
+
+            // Quote value if it contains spaces or special characters
+            if (preg_match('/[\s#"\']/', $value) && !preg_match('/^".*"$/', $value)) {
+                $value = '"' . str_replace('"', '\"', $value) . '"';
+            }
+
             // Check if key exists
             if (preg_match("/^{$key}=.*/m", $envContent)) {
                 // Update existing key

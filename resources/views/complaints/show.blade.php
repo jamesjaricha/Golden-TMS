@@ -170,44 +170,298 @@
                     </dl>
                 </div>
 
-                <!-- Timeline -->
-                <div class="bg-white rounded-apple-lg shadow-apple p-6">
-                    <h3 class="text-lg font-semibold text-apple-gray-900 mb-4">Activity Timeline</h3>
+                <!-- Timeline & Task Reminders -->
+                <div class="bg-white rounded-apple-lg shadow-apple p-6" x-data="{ showReminderModal: false, editingReminder: null, activeTab: 'timeline' }">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-4">
+                            <button @click="activeTab = 'timeline'"
+                                    :class="activeTab === 'timeline' ? 'text-apple-blue border-b-2 border-apple-blue' : 'text-apple-gray-500'"
+                                    class="text-lg font-semibold pb-1 transition-colors">
+                                Activity Timeline
+                            </button>
+                            <button @click="activeTab = 'tasks'"
+                                    :class="activeTab === 'tasks' ? 'text-apple-blue border-b-2 border-apple-blue' : 'text-apple-gray-500'"
+                                    class="text-lg font-semibold pb-1 transition-colors flex items-center gap-2">
+                                📋 Task Reminders
+                                @if($complaint->reminders && $complaint->reminders->where('status', 'pending')->count() > 0)
+                                    <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold rounded-full bg-red-600 text-white">
+                                        {{ $complaint->reminders->where('status', 'pending')->count() }}
+                                    </span>
+                                @endif
+                            </button>
+                        </div>
+                        @if(auth()->user()->role !== 'user')
+                            <button @click="showReminderModal = true; editingReminder = null; activeTab = 'tasks'"
+                                    class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Add Task
+                            </button>
+                        @endif
+                    </div>
 
-                    @if($activities->count() > 0)
-                        <div class="space-y-3">
-                            @foreach($activities as $activity)
-                                <div class="flex items-start">
-                                    @php
-                                        $color = 'bg-apple-blue';
-                                        if(str_contains(strtolower($activity->action), 'resolved')) $color = 'bg-green-500';
-                                        if(str_contains(strtolower($activity->action), 'closed')) $color = 'bg-gray-500';
-                                        if(str_contains(strtolower($activity->action), 'assigned')) $color = 'bg-yellow-500';
-                                        if(str_contains(strtolower($activity->action), 'updated')) $color = 'bg-blue-500';
-                                        if(str_contains(strtolower($activity->action), 'comment')) $color = 'bg-purple-500';
-                                    @endphp
-                                    <div class="w-2 h-2 {{ $color }} rounded-full mt-2 mr-3 flex-shrink-0"></div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-medium text-apple-gray-900">{{ $activity->description }}</p>
-                                        <p class="text-xs text-apple-gray-500">{{ $activity->user->name }} • {{ $activity->created_at->format('M d, Y h:i A') }}</p>
+                    <!-- Timeline Tab -->
+                    <div x-show="activeTab === 'timeline'" x-transition>
+                        @if($activities->count() > 0)
+                            <div class="space-y-3">
+                                @foreach($activities as $activity)
+                                    <div class="flex items-start">
+                                        @php
+                                            $color = 'bg-apple-blue';
+                                            if(str_contains(strtolower($activity->action), 'resolved')) $color = 'bg-green-500';
+                                            if(str_contains(strtolower($activity->action), 'closed')) $color = 'bg-gray-500';
+                                            if(str_contains(strtolower($activity->action), 'assigned')) $color = 'bg-yellow-500';
+                                            if(str_contains(strtolower($activity->action), 'updated')) $color = 'bg-blue-500';
+                                            if(str_contains(strtolower($activity->action), 'comment')) $color = 'bg-purple-500';
+                                        @endphp
+                                        <div class="w-2 h-2 {{ $color }} rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-medium text-apple-gray-900">{{ $activity->description }}</p>
+                                            <p class="text-xs text-apple-gray-500">{{ $activity->user->name }} • {{ $activity->created_at->format('M d, Y h:i A') }}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            @endforeach
-                        </div>
+                                @endforeach
+                            </div>
 
-                        <!-- Pagination -->
-                        <div class="mt-6 pt-4 border-t border-apple-gray-200">
-                            {{ $activities->links() }}
-                        </div>
-                    @else
-                        <div class="flex items-start">
-                            <div class="w-2 h-2 bg-apple-blue rounded-full mt-2 mr-3"></div>
-                            <div class="flex-1">
-                                <p class="text-sm font-medium text-apple-gray-900">Created</p>
-                                <p class="text-xs text-apple-gray-500">{{ $complaint->created_at->format('M d, Y h:i A') }}</p>
+                            <!-- Pagination -->
+                            <div class="mt-6 pt-4 border-t border-apple-gray-200">
+                                {{ $activities->links() }}
+                            </div>
+                        @else
+                            <div class="flex items-start">
+                                <div class="w-2 h-2 bg-apple-blue rounded-full mt-2 mr-3"></div>
+                                <div class="flex-1">
+                                    <p class="text-sm font-medium text-apple-gray-900">Created</p>
+                                    <p class="text-xs text-apple-gray-500">{{ $complaint->created_at->format('M d, Y h:i A') }}</p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Task Reminders Tab -->
+                    <div x-show="activeTab === 'tasks'" x-transition>
+                        @if($complaint->reminders && $complaint->reminders->count() > 0)
+                            <div class="space-y-3">
+                                @foreach($complaint->reminders as $reminder)
+                                    <div class="border-l-4 {{ $reminder->status === 'completed' ? 'border-green-500 bg-green-50' : ($reminder->isOverdue() ? 'border-red-500 bg-red-50' : 'border-blue-500 bg-blue-50') }} rounded-r-lg p-4 hover:shadow-md transition-shadow">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center flex-wrap gap-2 mb-2">
+                                                    @if($reminder->status === 'completed')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-600 text-white">
+                                                            ✓ Completed
+                                                        </span>
+                                                    @elseif($reminder->status === 'cancelled')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-gray-600 text-white">
+                                                            Cancelled
+                                                        </span>
+                                                    @elseif($reminder->isOverdue())
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-600 text-white">
+                                                            ⚠ Overdue
+                                                        </span>
+                                                    @else
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-600 text-white">
+                                                            Pending
+                                                        </span>
+                                                    @endif
+
+                                                    @if($reminder->priority === 'high')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-red-600 text-white">
+                                                            🔥 High
+                                                        </span>
+                                                    @elseif($reminder->priority === 'medium')
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-yellow-600 text-white">
+                                                            ⏰ Medium
+                                                        </span>
+                                                    @endif
+                                                </div>
+
+                                                <p class="text-sm font-semibold text-apple-gray-900 mb-2 {{ $reminder->status === 'completed' ? 'line-through' : '' }}">
+                                                    {{ $reminder->task_description }}
+                                                </p>
+
+                                                @if($reminder->notes)
+                                                    <div class="bg-white bg-opacity-70 border border-blue-200 p-2 mb-2 rounded text-xs">
+                                                        <span class="font-semibold text-blue-900">Notes:</span> <span class="text-blue-800">{{ $reminder->notes }}</span>
+                                                    </div>
+                                                @endif
+
+                                                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-apple-gray-700">
+                                                    <span><strong>Assigned:</strong> {{ $reminder->user->name }}</span>
+                                                    <span><strong>Due:</strong> {{ $reminder->reminder_datetime->format('M j, g:i A') }}</span>
+                                                    <span><strong>By:</strong> {{ $reminder->creator->name }}</span>
+                                                </div>
+
+                                                @if($reminder->status === 'completed')
+                                                    <p class="text-xs text-green-700 font-medium mt-1">
+                                                        ✓ Completed by {{ $reminder->completedByUser->name }} on {{ $reminder->completed_at->format('M j, g:i A') }}
+                                                    </p>
+                                                @endif
+                                            </div>
+
+                                            @if($reminder->status === 'pending' && (auth()->id() === $reminder->user_id || auth()->user()->role !== 'user'))
+                                                <div class="flex flex-col gap-1">
+                                                    <form action="{{ route('reminders.complete', [$complaint, $reminder]) }}" method="POST">
+                                                        @csrf
+                                                        <button type="submit"
+                                                                class="inline-flex items-center px-2 py-1 bg-green-600 text-white text-xs font-medium rounded hover:bg-green-700"
+                                                                title="Complete">
+                                                            ✓
+                                                        </button>
+                                                    </form>
+
+                                                    <div x-data="{ showSnooze{{ $reminder->id }}: false }" class="relative">
+                                                        <button @click="showSnooze{{ $reminder->id }} = !showSnooze{{ $reminder->id }}"
+                                                                class="inline-flex items-center px-2 py-1 bg-yellow-600 text-white text-xs font-medium rounded hover:bg-yellow-700"
+                                                                title="Snooze">
+                                                            💤
+                                                        </button>
+                                                        <div x-show="showSnooze{{ $reminder->id }}"
+                                                             @click.away="showSnooze{{ $reminder->id }} = false"
+                                                             class="absolute right-0 top-full mt-1 w-24 bg-white rounded shadow-lg border border-gray-200 z-10">
+                                                            <form action="{{ route('reminders.snooze', [$complaint, $reminder]) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="hours" value="1">
+                                                                <button type="submit" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50">1 hour</button>
+                                                            </form>
+                                                            <form action="{{ route('reminders.snooze', [$complaint, $reminder]) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="hours" value="4">
+                                                                <button type="submit" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50">4 hours</button>
+                                                            </form>
+                                                            <form action="{{ route('reminders.snooze', [$complaint, $reminder]) }}" method="POST">
+                                                                @csrf
+                                                                <input type="hidden" name="hours" value="24">
+                                                                <button type="submit" class="block w-full text-left px-2 py-1 text-xs hover:bg-gray-50">1 day</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+
+                                                    <form action="{{ route('reminders.destroy', [$complaint, $reminder]) }}" method="POST" onsubmit="return confirm('Delete this task?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                                class="inline-flex items-center px-2 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700"
+                                                                title="Delete">
+                                                            ✕
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="text-center py-8">
+                                <svg class="w-12 h-12 text-apple-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <p class="text-sm text-apple-gray-600 font-medium">No task reminders yet</p>
+                                <p class="text-xs text-apple-gray-500 mt-1">Add reminders for follow-up tasks</p>
+                            </div>
+                        @endif
+                    </div>
+
+                    <!-- Add/Edit Task Reminder Modal -->
+                    <div x-show="showReminderModal"
+                         x-transition:enter="transition ease-out duration-300"
+                         x-transition:enter-start="opacity-0"
+                         x-transition:enter-end="opacity-100"
+                         x-transition:leave="transition ease-in duration-200"
+                         x-transition:leave-start="opacity-100"
+                         x-transition:leave-end="opacity-0"
+                         class="fixed inset-0 z-50 overflow-y-auto"
+                         style="display: none;">
+                        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+                            <!-- Backdrop -->
+                            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showReminderModal = false"></div>
+
+                            <!-- Modal Panel -->
+                            <div class="relative bg-white rounded-apple-lg shadow-xl transform transition-all sm:max-w-lg sm:w-full mx-auto"
+                                 @click.away="showReminderModal = false">
+                                <form action="{{ route('reminders.store', $complaint) }}" method="POST">
+                                    @csrf
+                                    <div class="px-6 pt-5 pb-4">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-lg font-semibold text-apple-gray-900">
+                                                Add Task Reminder
+                                            </h3>
+                                            <button type="button" @click="showReminderModal = false" class="text-apple-gray-400 hover:text-apple-gray-600">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            <!-- Assign To -->
+                                            <div>
+                                                <label for="reminder_user_id" class="block text-sm font-medium text-apple-gray-700 mb-1">Assign To</label>
+                                                <select name="user_id" id="reminder_user_id" required
+                                                        class="w-full px-3 py-2 border border-apple-gray-300 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue">
+                                                    <option value="">Select Agent</option>
+                                                    @foreach(\App\Models\User::whereIn('role', ['support_agent', 'manager', 'super_admin'])->orderBy('name')->get() as $user)
+                                                        <option value="{{ $user->id }}" {{ $complaint->assigned_to == $user->id ? 'selected' : '' }}>
+                                                            {{ $user->name }} ({{ ucwords(str_replace('_', ' ', $user->role)) }})
+                                                        </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+
+                                            <!-- Task Description -->
+                                            <div>
+                                                <label for="task_description" class="block text-sm font-medium text-apple-gray-700 mb-1">Task Description</label>
+                                                <input type="text" name="task_description" id="task_description" required
+                                                       placeholder="e.g., Follow up with customer"
+                                                       class="w-full px-3 py-2 border border-apple-gray-300 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue">
+                                            </div>
+
+                                            <!-- Reminder Date & Time -->
+                                            <div>
+                                                <label for="reminder_datetime" class="block text-sm font-medium text-apple-gray-700 mb-1">Reminder Date & Time</label>
+                                                <input type="datetime-local" name="reminder_datetime" id="reminder_datetime" required
+                                                       min="{{ now()->format('Y-m-d\TH:i') }}"
+                                                       class="w-full px-3 py-2 border border-apple-gray-300 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue">
+                                            </div>
+
+                                            <!-- Priority -->
+                                            <div>
+                                                <label for="reminder_priority" class="block text-sm font-medium text-apple-gray-700 mb-1">Priority</label>
+                                                <select name="priority" id="reminder_priority"
+                                                        class="w-full px-3 py-2 border border-apple-gray-300 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue">
+                                                    <option value="low">Low</option>
+                                                    <option value="medium" selected>Medium</option>
+                                                    <option value="high">High</option>
+                                                    <option value="urgent">Urgent</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Notes -->
+                                            <div>
+                                                <label for="reminder_notes" class="block text-sm font-medium text-apple-gray-700 mb-1">Notes (Optional)</label>
+                                                <textarea name="notes" id="reminder_notes" rows="2"
+                                                          placeholder="Additional context or instructions..."
+                                                          class="w-full px-3 py-2 border border-apple-gray-300 rounded-apple focus:ring-2 focus:ring-apple-blue focus:border-apple-blue"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-apple-gray-50 px-6 py-3 flex justify-end gap-3 rounded-b-apple-lg">
+                                        <button type="button" @click="showReminderModal = false"
+                                                class="px-4 py-2 text-sm font-medium text-apple-gray-700 bg-white border border-apple-gray-300 rounded-apple hover:bg-apple-gray-50 transition-colors">
+                                            Cancel
+                                        </button>
+                                        <button type="submit"
+                                                class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-apple hover:bg-red-700 transition-colors">
+                                            Create Reminder
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
-                    @endif
+                    </div>
                 </div>
             </div>
 

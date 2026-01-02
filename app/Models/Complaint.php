@@ -15,6 +15,7 @@ class Complaint extends Model
         'ticket_number',
         'policy_number',
         'full_name',
+        'email',
         'phone_number',
         'location',
         'visited_branch',
@@ -24,11 +25,14 @@ class Complaint extends Model
         'department_id',
         'pending_department',
         'completed_department',
+        'subject',
+        'description',
         'complaint_text',
         'status',
         'priority',
         'captured_by',
         'assigned_to',
+        'source',
         'resolved_at',
         'partial_closed_at',
         'closed_at',
@@ -151,6 +155,22 @@ class Complaint extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Get all reminders/tasks for this ticket
+     */
+    public function reminders()
+    {
+        return $this->hasMany(TicketReminder::class);
+    }
+
+    /**
+     * Get pending reminders/tasks for this ticket
+     */
+    public function pendingReminders()
+    {
+        return $this->hasMany(TicketReminder::class)->where('status', 'pending');
     }
 
     /**
