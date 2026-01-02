@@ -10,6 +10,11 @@ class WhatsAppConversation extends Model
 {
     use HasFactory;
 
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'whatsapp_conversations';
+
     protected $fillable = [
         'phone_number',
         'agent_id',
