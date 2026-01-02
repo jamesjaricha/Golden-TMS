@@ -41,6 +41,8 @@ class WhatsAppConversation extends Model
         'client_name',    // Asking for client's full name
         'client_phone',   // Asking for client's phone number
         'policy_number',  // Asking for policy number
+        'employer',       // Asking for employer
+        'payment_method', // Asking for payment method
         'location',       // Asking for client's location
         'branch',         // Asking which branch they visited
         'department',     // Asking which department

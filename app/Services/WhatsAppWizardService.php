@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Branch;
 use App\Models\Complaint;
 use App\Models\Department;
+use App\Models\Employer;
+use App\Models\PaymentMethod;
 use App\Models\User;
 use App\Models\WhatsAppConversation;
 use Illuminate\Support\Facades\Log;
@@ -80,6 +82,12 @@ class WhatsAppWizardService
             case 'policy_number':
                 return $this->handlePolicyNumber($conversation, $input);
 
+            case 'employer':
+                return $this->handleEmployer($conversation, $input);
+
+            case 'payment_method':
+                return $this->handlePaymentMethod($conversation, $input);
+
             case 'location':
                 return $this->handleLocation($conversation, $input);
 
@@ -141,14 +149,82 @@ class WhatsAppWizardService
     {
         $input = strtoupper(trim($input));
 
-        // Allow "N/A" or "NONE" to skip
-        if (in_array($input, ['N/A', 'NA', 'NONE', 'SKIP', '-'])) {
-            $input = 'N/A';
+        // Validate policy number format (alphanumeric with dashes/underscores/slashes)
+        if (strlen($input) < 3 || !preg_match('/^[a-zA-Z0-9\-_\/]+$/', $input)) {
+            return "❌ Please enter a valid policy number.\n\n📋 *What is the client's policy number?*\n\n_Example: GK123456_";
         }
 
         $conversation->setStepData('policy_number', $input);
         $conversation->nextStep();
         return "✅ Policy Number: *{$input}*\n\n" . $this->getStepPrompt($conversation);
+    }
+
+    /**
+     * Handle employer selection
+     */
+    protected function handleEmployer(WhatsAppConversation $conversation, string $input): string
+    {
+        $employers = Employer::where('is_active', true)->orderBy('name')->get();
+
+        // Check if input is a number (selection)
+        if (is_numeric($input)) {
+            $index = (int)$input - 1;
+            if ($index >= 0 && $index < $employers->count()) {
+                $employer = $employers[$index];
+                $conversation->setStepData('employer_id', $employer->id);
+                $conversation->setStepData('employer_name', $employer->name);
+                $conversation->nextStep();
+                return "✅ Employer: *{$employer->name}*\n\n" . $this->getStepPrompt($conversation);
+            }
+        }
+
+        // Check if input matches an employer name
+        $matchedEmployer = $employers->first(function ($employer) use ($input) {
+            return stripos($employer->name, $input) !== false;
+        });
+
+        if ($matchedEmployer) {
+            $conversation->setStepData('employer_id', $matchedEmployer->id);
+            $conversation->setStepData('employer_name', $matchedEmployer->name);
+            $conversation->nextStep();
+            return "✅ Employer: *{$matchedEmployer->name}*\n\n" . $this->getStepPrompt($conversation);
+        }
+
+        return "❌ Please select a valid employer number or name.\n\n" . $this->getEmployerList();
+    }
+
+    /**
+     * Handle payment method selection
+     */
+    protected function handlePaymentMethod(WhatsAppConversation $conversation, string $input): string
+    {
+        $methods = PaymentMethod::where('is_active', true)->orderBy('name')->get();
+
+        // Check if input is a number (selection)
+        if (is_numeric($input)) {
+            $index = (int)$input - 1;
+            if ($index >= 0 && $index < $methods->count()) {
+                $method = $methods[$index];
+                $conversation->setStepData('payment_method_id', $method->id);
+                $conversation->setStepData('payment_method_name', $method->name);
+                $conversation->nextStep();
+                return "✅ Payment Method: *{$method->name}*\n\n" . $this->getStepPrompt($conversation);
+            }
+        }
+
+        // Check if input matches a payment method name
+        $matchedMethod = $methods->first(function ($method) use ($input) {
+            return stripos($method->name, $input) !== false;
+        });
+
+        if ($matchedMethod) {
+            $conversation->setStepData('payment_method_id', $matchedMethod->id);
+            $conversation->setStepData('payment_method_name', $matchedMethod->name);
+            $conversation->nextStep();
+            return "✅ Payment Method: *{$matchedMethod->name}*\n\n" . $this->getStepPrompt($conversation);
+        }
+
+        return "❌ Please select a valid payment method number or name.\n\n" . $this->getPaymentMethodList();
     }
 
     /**
@@ -308,13 +384,15 @@ class WhatsAppWizardService
                 'ticket_number' => $this->generateTicketNumber(),
                 'full_name' => $data['client_name'],
                 'phone_number' => $data['client_phone'],
-                'policy_number' => $data['policy_number'] ?? 'N/A',
+                'policy_number' => $data['policy_number'],
+                'employer_id' => $data['employer_id'],
+                'payment_method_id' => $data['payment_method_id'],
                 'location' => $data['location'],
                 'visited_branch' => $data['branch_name'] ?? null,
-                'branch_id' => $data['branch_id'] ?? null,
-                'department_id' => $data['department_id'] ?? null,
+                'branch_id' => $data['branch_id'],
+                'department_id' => $data['department_id'],
                 'complaint_text' => $data['issue_description'],
-                'priority' => $data['priority'] ?? 'medium',
+                'priority' => $data['priority'],
                 'status' => 'pending',
                 'source' => 'whatsapp',
                 'captured_by' => $agent?->id ?? $conversation->agent_id,
@@ -350,28 +428,34 @@ class WhatsAppWizardService
     {
         switch ($conversation->current_step) {
             case 'client_name':
-                return "👤 *Step 1/8: Client Name*\n\nWhat is the client's *full name*?";
+                return "👤 *Step 1/10: Client Name*\n\nWhat is the client's *full name*?";
 
             case 'client_phone':
-                return "📱 *Step 2/8: Phone Number*\n\nWhat is the client's *phone number*?\n\n_Example: 0771234567_";
+                return "📱 *Step 2/10: Phone Number*\n\nWhat is the client's *phone number*?\n\n_Example: 0771234567_";
 
             case 'policy_number':
-                return "📋 *Step 3/8: Policy Number*\n\nWhat is the client's *policy number*?\n\n_Type N/A if not applicable_";
+                return "📋 *Step 3/10: Policy Number*\n\nWhat is the client's *policy number*?\n\n_Example: GK123456_";
+
+            case 'employer':
+                return "🏭 *Step 4/10: Employer*\n\nWho is the client's *employer*?\n\n" . $this->getEmployerList();
+
+            case 'payment_method':
+                return "💳 *Step 5/10: Payment Method*\n\nHow does the client *pay* their premiums?\n\n" . $this->getPaymentMethodList();
 
             case 'location':
-                return "📍 *Step 4/8: Location*\n\nWhere is the client *located*?\n\n_Example: Harare, Bulawayo, Mutare_";
+                return "📍 *Step 6/10: Location*\n\nWhere is the client *located*?\n\n_Example: Harare, Bulawayo, Mutare_";
 
             case 'branch':
-                return "🏢 *Step 5/8: Branch*\n\nWhich branch did the client visit?\n\n" . $this->getBranchList();
+                return "🏢 *Step 7/10: Branch*\n\nWhich branch did the client visit?\n\n" . $this->getBranchList();
 
             case 'department':
-                return "🏷️ *Step 6/8: Department*\n\nWhich department should handle this?\n\n" . $this->getDepartmentList();
+                return "🏷️ *Step 8/10: Department*\n\nWhich department should handle this?\n\n" . $this->getDepartmentList();
 
             case 'issue':
-                return "📝 *Step 7/8: Issue Description*\n\nDescribe the client's *issue or complaint* in detail:";
+                return "📝 *Step 9/10: Issue Description*\n\nDescribe the client's *issue or complaint* in detail:";
 
             case 'priority':
-                return "⚡ *Step 8/8: Priority*\n\nHow urgent is this issue?\n\n" . $this->getPriorityList();
+                return "⚡ *Step 10/10: Priority*\n\nHow urgent is this issue?\n\n" . $this->getPriorityList();
 
             case 'confirm':
                 return $this->getConfirmationSummary($conversation);
@@ -418,6 +502,42 @@ class WhatsAppWizardService
     }
 
     /**
+     * Get employer list for selection
+     */
+    protected function getEmployerList(): string
+    {
+        $employers = Employer::where('is_active', true)->orderBy('name')->get();
+
+        if ($employers->isEmpty()) {
+            return "_No employers configured_";
+        }
+
+        $list = "";
+        foreach ($employers as $index => $employer) {
+            $list .= ($index + 1) . ". {$employer->name}\n";
+        }
+        return $list . "\n_Reply with number or name_";
+    }
+
+    /**
+     * Get payment method list for selection
+     */
+    protected function getPaymentMethodList(): string
+    {
+        $methods = PaymentMethod::where('is_active', true)->orderBy('name')->get();
+
+        if ($methods->isEmpty()) {
+            return "_No payment methods configured_";
+        }
+
+        $list = "";
+        foreach ($methods as $index => $method) {
+            $list .= ($index + 1) . ". {$method->name}\n";
+        }
+        return $list . "\n_Reply with number or name_";
+    }
+
+    /**
      * Get priority list for selection
      */
     protected function getPriorityList(): string
@@ -434,16 +554,18 @@ class WhatsAppWizardService
         $priority = $data['priority'] ?? 'medium';
         $emoji = $this->getPriorityEmoji($priority);
 
-        $summary = "📋 *TICKET SUMMARY*\n";
+        $summary = "{$emoji} *Priority:* " . ucfirst($priority) . "\n\n";
+        $summary .= "📋 *TICKET SUMMARY*\n";
         $summary .= "━━━━━━━━━━━━━━━━━\n\n";
         $summary .= "👤 *Name:* {$data['client_name']}\n";
         $summary .= "📱 *Phone:* {$data['client_phone']}\n";
         $summary .= "📋 *Policy:* {$data['policy_number']}\n";
+        $summary .= "🏭 *Employer:* " . ($data['employer_name'] ?? 'N/A') . "\n";
+        $summary .= "💳 *Payment:* " . ($data['payment_method_name'] ?? 'N/A') . "\n";
         $summary .= "📍 *Location:* {$data['location']}\n";
         $summary .= "🏢 *Branch:* " . ($data['branch_name'] ?? 'N/A') . "\n";
         $summary .= "🏷️ *Department:* " . ($data['department_name'] ?? 'N/A') . "\n";
-        $summary .= "{$emoji} *Priority:* " . ucfirst($priority) . "\n\n";
-        $summary .= "📝 *Issue:*\n{$data['issue_description']}\n\n";
+        $summary .= "\n📝 *Issue:*\n{$data['issue_description']}\n\n";
         $summary .= "━━━━━━━━━━━━━━━━━\n\n";
         $summary .= "Is this correct?\n\n";
         $summary .= "Reply *YES* to create ticket\n";
