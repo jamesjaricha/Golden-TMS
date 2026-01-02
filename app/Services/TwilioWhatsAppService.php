@@ -61,9 +61,19 @@ class TwilioWhatsAppService
         // Remove any non-numeric characters except +
         $phone = preg_replace('/[^0-9+]/', '', $phone);
 
-        // Ensure it starts with country code (no +)
+        // Remove + if present
         if (str_starts_with($phone, '+')) {
             $phone = substr($phone, 1);
+        }
+
+        // Handle Zimbabwe local numbers (starting with 0)
+        if (str_starts_with($phone, '0')) {
+            $phone = '263' . substr($phone, 1);
+        }
+
+        // If number doesn't start with a country code, assume Zimbabwe (263)
+        if (strlen($phone) <= 10 && !str_starts_with($phone, '263')) {
+            $phone = '263' . $phone;
         }
 
         // Add whatsapp: prefix
