@@ -12,8 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('whatsapp_number')->nullable()->after('email');
-            $table->boolean('whatsapp_notifications_enabled')->default(true)->after('whatsapp_number');
+            // Only add whatsapp_number if it doesn't exist
+            if (!Schema::hasColumn('users', 'whatsapp_number')) {
+                $table->string('whatsapp_number')->nullable()->after('email');
+            }
+            // whatsapp_notifications_enabled is already added by 2025_12_28_083822 migration
         });
     }
 
@@ -23,7 +26,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['whatsapp_number', 'whatsapp_notifications_enabled']);
+            if (Schema::hasColumn('users', 'whatsapp_number')) {
+                $table->dropColumn('whatsapp_number');
+            }
         });
     }
 };
