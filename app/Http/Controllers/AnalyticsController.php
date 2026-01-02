@@ -131,10 +131,3 @@ class AnalyticsController extends Controller
         return view('analytics.index', array_merge($analyticsData, compact('recentActivity')));
     }
 }
-            'ticketsByPriority',
-            'agentPerformance',
-            'recentActivity',
-            'monthlyStats'
-        ));
-    }
-}

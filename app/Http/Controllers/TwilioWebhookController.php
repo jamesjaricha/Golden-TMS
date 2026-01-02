@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Complaint;
 use App\Models\User;
+use App\Models\WhatsAppConversation;
 use App\Models\WhatsAppMessage;
 use App\Services\ActivityLogService;
+use App\Services\WhatsAppWizardService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Log;
@@ -52,7 +54,9 @@ class TwilioWebhookController extends Controller
     /**
      * Handle incoming WhatsApp messages from Twilio
      *
-     * Agents can create tickets by sending WhatsApp messages in this format:
+     * Agents can create tickets by:
+     * 1. Using the WIZARD command to start a guided conversation
+     * 2. Sending WhatsApp messages in direct format:
      *
      * TICKET
      * Client: John Doe
@@ -111,13 +115,26 @@ class TwilioWebhookController extends Controller
                 'status' => 'new',
             ]);
 
-            // If sender is a registered agent, check if it's a ticket creation request
-            if ($agent && $this->isTicketRequest($body)) {
-                return $this->processTicketCreation($message, $agent, $body);
-            }
+            // Check if there's an active wizard conversation for this number
+            $wizardService = app(WhatsAppWizardService::class);
+            $activeConversation = WhatsAppConversation::where('phone_number', $phoneNumber)
+                ->where('status', 'active')
+                ->where('expires_at', '>', now())
+                ->first();
 
-            // If it's an agent but not a ticket request, send help message
+            // If agent with active conversation, or starting wizard
             if ($agent) {
+                // Check if starting new wizard or in active wizard
+                if ($activeConversation || $this->isWizardCommand($body)) {
+                    return $this->handleWizardFlow($wizardService, $phoneNumber, $body, $agent, $message);
+                }
+
+                // Check if it's a direct ticket creation request (legacy format)
+                if ($this->isTicketRequest($body)) {
+                    return $this->processTicketCreation($message, $agent, $body);
+                }
+
+                // Not a ticket or wizard request, send help message
                 $this->sendHelpMessage($from, $agent->name);
                 return $this->xmlResponse();
             }
@@ -136,6 +153,48 @@ class TwilioWebhookController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
             return response('Error processing message', 500);
+        }
+    }
+
+    /**
+     * Check if message is a wizard start command
+     */
+    protected function isWizardCommand(string $body): bool
+    {
+        $body = strtolower(trim($body));
+        return in_array($body, ['wizard', 'new', 'start', 'create', 'hi', 'hello', 'help']);
+    }
+
+    /**
+     * Handle wizard conversation flow
+     */
+    protected function handleWizardFlow(WhatsAppWizardService $wizardService, string $phoneNumber, string $body, User $agent, WhatsAppMessage $message): Response
+    {
+        try {
+            $result = $wizardService->handleIncomingMessage($phoneNumber, $body, $agent);
+
+            // Update message status if ticket was created
+            if (isset($result['ticket'])) {
+                $message->update([
+                    'status' => 'converted',
+                    'complaint_id' => $result['ticket']->id,
+                ]);
+            }
+
+            return $this->xmlResponse();
+
+        } catch (\Exception $e) {
+            Log::error('[Twilio Wizard] Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            // Send error message to user
+            $twilioService = app(\App\Services\TwilioWhatsAppService::class);
+            if ($twilioService->isConfigured()) {
+                $twilioService->sendMessage($phoneNumber, "❌ Sorry, there was an error. Please try again or type CANCEL to start over.");
+            }
+
+            return $this->xmlResponse();
         }
     }
 
@@ -397,14 +456,14 @@ class TwilioWebhookController extends Controller
         $phone = str_replace('whatsapp:', '', $to);
 
         $message = "Hi {$agentName}! 👋\n\n";
-        $message .= "To create a ticket, send a message starting with *TICKET* followed by the details.\n\n";
-        $message .= "*Quick Format:*\n";
+        $message .= "*Option 1: Guided Wizard (Recommended)*\n";
+        $message .= "Send *WIZARD* or *NEW* to start a step-by-step ticket creation.\n\n";
+        $message .= "*Option 2: Quick Format*\n";
+        $message .= "Send a message starting with *TICKET* followed by the details:\n";
         $message .= "```\nTICKET Client Name | Phone | Subject | Description\n```\n\n";
-        $message .= "*Detailed Format:*\n";
+        $message .= "*Option 3: Detailed Format*\n";
         $message .= "```\nTICKET\nClient: John Doe\nPhone: 0771234567\nSubject: Issue title\nDescription: Full details here\nPriority: high\n```\n\n";
-        $message .= "*Priority options:* low, medium, high, urgent\n\n";
-        $message .= "Example:\n";
-        $message .= "_TICKET Jane Smith | 0772345678 | Login Issue | Customer cannot access their account since yesterday_";
+        $message .= "*Priority options:* low, medium, high, urgent";
 
         $twilioService->sendMessage($phone, $message);
     }
