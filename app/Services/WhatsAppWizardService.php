@@ -9,6 +9,7 @@ use App\Models\Employer;
 use App\Models\PaymentMethod;
 use App\Models\User;
 use App\Models\WhatsAppConversation;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Twilio\Rest\Client;
@@ -435,6 +436,10 @@ class WhatsAppWizardService
                 $agentId  // Pass as 5th parameter to override Auth::id()
             );
 
+            // Send WhatsApp notification to the CLIENT (not the agent)
+            // This uses Twilio template to notify the customer their ticket is being worked on
+            NotificationService::sendWhatsAppTicketCreated($complaint);
+
             return $this->getSuccessMessage($complaint);
 
         } catch (\Exception $e) {
@@ -611,8 +616,9 @@ class WhatsAppWizardService
             "🎫 *Ticket #:* {$complaint->ticket_number}\n" .
             "👤 *Client:* {$complaint->full_name}\n" .
             "{$emoji} *Priority:* " . ucfirst($complaint->priority) . "\n" .
-            "📊 *Status:* Pending\n\n" .
-            "The ticket has been logged and assigned.\n\n" .
+            "📊 *Status:* In Progress\n\n" .
+            "The ticket has been logged and assigned.\n" .
+            "Client will receive a WhatsApp notification.\n\n" .
             "━━━━━━━━━━━━━━━━━\n" .
             "Type *TICKET* to create another ticket.";
     }
