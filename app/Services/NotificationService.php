@@ -68,6 +68,7 @@ class NotificationService
 
     /**
      * Send WhatsApp notification when ticket is created (via Twilio)
+     * Uses the in_progress template since that's what's approved in Twilio
      */
     public static function sendWhatsAppTicketCreated(Complaint $complaint)
     {
@@ -84,13 +85,29 @@ class NotificationService
                 return;
             }
 
-            $result = $twilioService->sendTicketCreatedNotification(
-                $complaint->phone_number,
-                $complaint->full_name,
-                $complaint->ticket_number,
-                $complaint->department->name ?? 'N/A',
-                ucfirst($complaint->priority)
-            );
+            // Check if we have a specific ticket_created template
+            $templateSid = config('twilio.templates.ticket_created');
+
+            if (!empty($templateSid)) {
+                // Use dedicated ticket_created template
+                $result = $twilioService->sendTicketCreatedNotification(
+                    $complaint->phone_number,
+                    $complaint->full_name,
+                    $complaint->ticket_number,
+                    $complaint->department->name ?? 'N/A',
+                    ucfirst($complaint->priority)
+                );
+            } else {
+                // Fall back to using status update notification (in_progress template)
+                // This simulates a status change from "New" to "In Progress"
+                $result = $twilioService->sendTicketUpdatedNotification(
+                    $complaint->phone_number,
+                    $complaint->full_name,
+                    $complaint->ticket_number,
+                    'New',
+                    'In Progress'
+                );
+            }
 
             if ($result['success']) {
                 Log::info('[Twilio] Ticket created notification sent', [
