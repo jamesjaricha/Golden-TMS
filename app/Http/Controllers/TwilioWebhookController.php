@@ -113,7 +113,7 @@ class TwilioWebhookController extends Controller
             $message = WhatsAppMessage::create([
                 'message_sid' => $messageSid,
                 'from_number' => $from,
-                'to_number' => $request->input('To'),
+                'to_number' => $request->input('To') ?? config('twilio.whatsapp_from', 'unknown'),
                 'body' => $body,
                 'profile_name' => $profileName,
                 'media_url' => $request->input('MediaUrl0'),
